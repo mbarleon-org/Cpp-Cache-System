@@ -57,8 +57,8 @@ namespace data {
         [[nodiscard]] IStrategyCache<K, V>& getMethodCache(
                     const std::string& className,
                     const std::string& methodName,
-                    std::size_t capacity = 128,
-                    std::size_t fragments = 1)
+                    std::size_t fragments = 4,
+                    std::size_t capacity = 128)
         {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 
@@ -95,12 +95,22 @@ namespace data {
             requires concepts::CacheLike<CacheT, K, V>
             std::shared_ptr<CacheT> allocateCache(std::size_t fragments, std::size_t capacity) {
                 if constexpr (concepts::SharedCacheLike<CacheT, K, V>) {
-                    auto* p = std::addressof(CacheT::getInstance());
+                    initSharedCacheLike<CacheT, K, V>(fragments, capacity);
+                    auto *p = std::addressof(CacheT::getInstance());
                     return std::shared_ptr<CacheT>(p, NoDelete<CacheT>{});
                 } else if constexpr (concepts::FragmentedCacheLike<CacheT, K, V>) {
                     return std::make_shared<CacheT>(fragments, capacity);
                 } else {
                     return std::make_shared<CacheT>(capacity);
+                }
+            }
+
+            template<typename CacheT, typename K, typename V>
+            void initSharedCacheLike(std::size_t fragments, std::size_t capacity) const {
+                if constexpr (concepts::FragmentedCacheLike<CacheT, K, V>) {
+                    CacheT::getInstance().initialize(fragments, capacity);
+                } else {
+                    CacheT::getInstance().initialize(capacity);
                 }
             }
 

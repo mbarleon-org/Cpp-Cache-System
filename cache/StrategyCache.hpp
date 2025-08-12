@@ -20,6 +20,7 @@ namespace data {
                 typename Eq = std::equal_to<K>,
                 typename Mutex = std::shared_mutex
     >
+    
     requires    concepts::StrategyLike<Strategy, K, V> &&
                 concepts::MutexLike<Mutex>
 

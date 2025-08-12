@@ -33,7 +33,7 @@ namespace data {
             using ValType = V;
             using IsFragmentedCache = void;
 
-            explicit FragmentedStrategyCache(std::size_t fragments, std::size_t cap = 128):
+            explicit FragmentedStrategyCache(std::size_t fragments = 4, std::size_t cap = 128):
                 _nfragments(fragments), _capacity(cap),
                 _capacity_per_fragment(std::max<std::size_t>(1, cap / std::max<std::size_t>(1, fragments)))
             {
