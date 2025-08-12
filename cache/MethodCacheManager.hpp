@@ -78,7 +78,7 @@ namespace data {
 
         private:
             explicit MethodCacheManager() = default;
-            ~MethodCacheManager() noexcept = default;
+            virtual ~MethodCacheManager() noexcept override = default;
 
             mutable RegMutex _mtx;
             std::unordered_map<CacheKey, std::shared_ptr<void>, CacheKeyHash> _caches;

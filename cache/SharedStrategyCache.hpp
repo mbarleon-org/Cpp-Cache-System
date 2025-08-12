@@ -17,7 +17,7 @@ namespace data {
     class SharedStrategyCache: public IStrategyCache<K, V>, public utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>> {
         friend class utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>>;
         public:
-            ~SharedStrategyCache() noexcept = default;
+            virtual ~SharedStrategyCache() noexcept override = default;
 
             [[nodiscard]] bool isCacheInitialized() const noexcept
             {
@@ -72,7 +72,6 @@ namespace data {
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 if constexpr (std::is_same_v<Mutex, NoLock>) {
                     return false;
                 }

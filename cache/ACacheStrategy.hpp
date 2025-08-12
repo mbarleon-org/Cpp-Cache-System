@@ -7,7 +7,7 @@ namespace data {
     template<typename K, typename V>
     class ACacheStrategy: public ICacheStrategy<K, V> {
         public:
-            virtual ~ACacheStrategy() noexcept = default;
+            virtual ~ACacheStrategy() noexcept override = default;
 
             virtual void reserve(std::size_t cap) final override {
                 if (cap < 1) {

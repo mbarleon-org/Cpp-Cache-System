@@ -27,7 +27,7 @@ namespace data {
                 _strategy->reserve(_capacity);
             }
 
-            ~StrategyCache() noexcept = default;
+            virtual ~StrategyCache() noexcept override = default;
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
@@ -91,13 +91,11 @@ namespace data {
 
             [[nodiscard]] virtual std::size_t capacity() const noexcept override
             {
-                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _capacity;
             }
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 if constexpr (std::is_same_v<Mutex, NoLock>) {
                     return false;
                 }

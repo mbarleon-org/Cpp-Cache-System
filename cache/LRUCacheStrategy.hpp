@@ -14,7 +14,7 @@ namespace data {
             using ValType = V;
 
             LRUCacheStrategy() = default;
-            ~LRUCacheStrategy() noexcept = default;
+            virtual ~LRUCacheStrategy() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

@@ -6,7 +6,7 @@ namespace data {
     template<typename K, typename V>
     class IStrategyCache {
         public:
-            ~IStrategyCache() noexcept = default;
+            virtual ~IStrategyCache() noexcept = default;
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) = 0;
             virtual void put(const K& key, const V& value) = 0;
