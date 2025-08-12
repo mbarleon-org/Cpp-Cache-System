@@ -10,6 +10,9 @@ namespace data {
     template<typename K, typename V>
     class LRUCacheStrategy final: public ACacheStrategy<K, V> {
         public:
+            using KeyType = K;
+            using ValType = V;
+
             LRUCacheStrategy() = default;
             ~LRUCacheStrategy() noexcept = default;
 

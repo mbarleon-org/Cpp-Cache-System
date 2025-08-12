@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mutex>
 #include <string>
 #include <memory>
 #include <typeinfo>
@@ -9,6 +8,7 @@
 #include <unordered_map>
 #include "StrategyCache.hpp"
 #include "LRUCacheStrategy.hpp"
+#include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
 
 struct CacheKey {
@@ -36,45 +36,44 @@ struct CacheKeyHash {
 
 namespace data {
     template<typename RegMutex = std::shared_mutex>
+    requires concepts::MutexLike<RegMutex>
     class MethodCacheManager : public utils::Singleton<MethodCacheManager<RegMutex>> {
         friend class utils::Singleton<MethodCacheManager<RegMutex>>;
 
     public:
-        template<typename K, typename V, typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename Mutex = std::mutex>
-        StrategyCache<K, V, Hash, Eq, Mutex>& getMethodCache( const std::string& className,
-            const std::string& methodName, std::size_t capacity = 128,
-            std::unique_ptr<ICacheStrategy<K, V>> strategy = nullptr)
+        template<typename K, typename V, typename Strategy = LRUCacheStrategy<K,V>,
+            typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename CacheMutex = std::shared_mutex>
+        requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<CacheMutex>
+        StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>& getMethodCache(const std::string& className,
+            const std::string& methodName, std::size_t capacity = 128)
         {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 
             {
-                std::shared_lock<std::shared_mutex> rlock(_mtx);
+                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 auto it = _caches.find(key);
                 if (it != _caches.end()) {
-                    return *static_cast<StrategyCache<K,V,Hash,Eq,Mutex>*>(it->second.get());
+                    return *static_cast<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>*>(it->second.get());
                 }
             }
 
-            std::unique_lock<std::shared_mutex> wlock(_mtx);
+            concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
             auto it = _caches.find(key);
             if (it == _caches.end()) {
-                if (!strategy) {
-                    strategy = std::make_unique<LRUCacheStrategy<K,V>>();
-                }
-                auto up = std::make_unique<StrategyCache<K,V,Hash,Eq,Mutex>>(std::move(strategy), capacity);
+                auto up = std::make_unique<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>>(capacity);
                 auto *raw = up.get();
                 _caches.emplace(
                     std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(
                         std::shared_ptr<void>(
                             up.release(), [](void* p){
-                                delete static_cast<StrategyCache<K,V,Hash,Eq,Mutex>*>(p);
+                                delete static_cast<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>*>(p);
                             }
                         )
                     )
                 );
                 return *raw;
             }
-            return *static_cast<StrategyCache<K,V,Hash,Eq,Mutex>*>(it->second.get());
+            return *static_cast<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>*>(it->second.get());
         }
 
         private:

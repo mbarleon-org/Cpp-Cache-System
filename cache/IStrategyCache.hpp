@@ -13,6 +13,7 @@ namespace data {
             virtual void clear() noexcept = 0;
             virtual std::size_t size() const noexcept = 0;
             virtual std::size_t capacity() const noexcept = 0;
+            virtual bool isMtSafe() const noexcept = 0;
 
         protected:
             constexpr explicit IStrategyCache() = default;

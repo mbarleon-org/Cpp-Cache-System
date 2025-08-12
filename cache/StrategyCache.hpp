@@ -1,29 +1,28 @@
 #pragma once
 
-#include <mutex>
 #include <memory>
 #include <stdexcept>
 #include <functional>
+#include <shared_mutex>
 #include <unordered_map>
 #include "ICacheStrategy.hpp"
 #include "IStrategyCache.hpp"
+#include "../utils/NoLock.hpp"
+#include "LRUCacheStrategy.hpp"
+#include "../utils/Concepts.hpp"
 
 namespace data {
-    template<typename K, typename V>
-    using CacheStrategyType = std::unique_ptr<ICacheStrategy<K, V>>;
-
-    template<typename K, typename V, typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename Mutex = std::mutex>
+    template<typename K, typename V, typename Strategy = LRUCacheStrategy<K, V>,
+        typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename Mutex = std::shared_mutex>
+    requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex>
     class StrategyCache final: public IStrategyCache<K, V> {
         public:
-            explicit StrategyCache(CacheStrategyType<K, V> strategy, std::size_t cap = 128):
-                _strategy(std::move(strategy)), _capacity(cap)
+            explicit StrategyCache(std::size_t cap = 128): _capacity(cap)
             {
                 if (cap < 1) {
                     throw(std::invalid_argument("Cannot give null capacity."));
                 }
-                if (_strategy.get() == nullptr) {
-                    throw(std::invalid_argument("Cannot give empty strategy."));
-                }
+                _strategy = std::make_unique<Strategy>();
                 _map.reserve(_capacity);
                 _strategy->reserve(_capacity);
             }
@@ -32,10 +31,15 @@ namespace data {
 
             virtual bool get(const K& key, V& cacheOut) override
             {
-                const auto it = _map.find(key);
-                if (it == _map.end()) {
-                    return false;
+                {
+                    concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    const auto it = _map.find(key);
+                    if (it == _map.end()) {
+                        return false;
+                    }
                 }
+                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+                const auto it = _map.find(key);
                 try {
                     _strategy->onAccess(key);
                 } catch (const std::invalid_argument &e) {
@@ -48,6 +52,7 @@ namespace data {
 
             virtual void put(const K& key, const V& value) override
             {
+                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
                 const auto it = _map.find(key);
                 if (it != _map.end()) {
                     it->second = value;
@@ -73,25 +78,38 @@ namespace data {
 
             virtual void clear() noexcept override
             {
+                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
                 _map.clear();
                 _strategy->onClear();
             }
 
             virtual std::size_t size() const noexcept override
             {
+                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _map.size();
             }
 
             virtual std::size_t capacity() const noexcept override
             {
+                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _capacity;
+            }
+
+            virtual bool isMtSafe() const noexcept override
+            {
+                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                if constexpr (std::is_same_v<Mutex, NoLock>) {
+                    return false;
+                }
+                return true;
             }
 
         private:
             using MapType = std::unordered_map<K, V, Hash, Eq>;
 
             MapType _map;
+            mutable Mutex _mtx;
             std::size_t _capacity;
-            CacheStrategyType<K, V> _strategy;
+            std::unique_ptr<Strategy> _strategy;
     };
 }
