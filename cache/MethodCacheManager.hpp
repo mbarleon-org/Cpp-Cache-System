@@ -17,13 +17,13 @@ struct CacheKey {
     std::type_index ktype;
     std::type_index vtype;
 
-    bool operator==(const CacheKey& o) const {
+    [[nodiscard]] bool operator==(const CacheKey& o) const {
         return cls==o.cls && method==o.method && ktype==o.ktype && vtype==o.vtype;
     }
 };
 
 struct CacheKeyHash {
-    size_t operator()(const CacheKey& k) const {
+    [[nodiscard]] size_t operator()(const CacheKey& k) const {
         size_t h = 0;
         auto mix=[&](size_t x){ h ^= x + 0x9e3779b97f4a7c15ull + (h << 6) + (h >>2 ); };
         mix(std::hash<std::string>{}(k.cls));
@@ -44,8 +44,8 @@ namespace data {
         template<typename K, typename V, typename Strategy = LRUCacheStrategy<K,V>,
             typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename CacheMutex = std::shared_mutex>
         requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<CacheMutex>
-        StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>& getMethodCache(const std::string& className,
-            const std::string& methodName, std::size_t capacity = 128)
+        [[nodiscard]] StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>& getMethodCache(
+            const std::string& className, const std::string& methodName, std::size_t capacity = 128)
         {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 

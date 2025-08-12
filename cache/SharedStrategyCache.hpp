@@ -19,7 +19,7 @@ namespace data {
         public:
             ~SharedStrategyCache() noexcept = default;
 
-            bool isCacheInitialized() const noexcept
+            [[nodiscard]] bool isCacheInitialized() const noexcept
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return static_cast<bool>(_cache);
@@ -33,7 +33,7 @@ namespace data {
                 }
             }
 
-            virtual bool get(const K& key, V& cacheOut) override
+            [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
                 concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
                 if (_cache) {
@@ -58,19 +58,19 @@ namespace data {
                 }
             }
 
-            virtual std::size_t size() const noexcept override
+            [[nodiscard]] virtual std::size_t size() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _cache ? _cache->size() : 0;
             }
 
-            virtual std::size_t capacity() const noexcept override
+            [[nodiscard]] virtual std::size_t capacity() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _cache ? _cache->capacity() : 0;
             }
 
-            virtual bool isMtSafe() const noexcept override
+            [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _cache ? _cache->isMtSafe() : false;

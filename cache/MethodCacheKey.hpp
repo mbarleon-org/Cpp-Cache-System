@@ -10,7 +10,7 @@ namespace data {
 
         MethodCacheKey(Args... arguments): args(std::forward<Args>(arguments)...) {}
 
-        bool operator==(const MethodCacheKey& other) const
+        [[nodiscard]] bool operator==(const MethodCacheKey& other) const
         {
             return args == other.args;
         }
@@ -19,7 +19,7 @@ namespace data {
     namespace detail {
         template<typename Tuple, std::size_t Index = std::tuple_size_v<Tuple>>
         struct tuple_hash_impl {
-            static std::size_t apply(const Tuple& tuple)
+            [[nodiscard]] static std::size_t apply(const Tuple& tuple)
             {
                 if constexpr (Index == 0) {
                     return 0;
@@ -35,7 +35,7 @@ namespace data {
 
 template<typename... Args>
 struct std::hash<data::MethodCacheKey<Args...>> {
-    std::size_t operator()(const data::MethodCacheKey<Args...>& key) const
+    [[nodiscard]] std::size_t operator()(const data::MethodCacheKey<Args...>& key) const
     {
         return data::detail::tuple_hash_impl<std::tuple<Args...>>::apply(key.args);
     }

@@ -29,7 +29,7 @@ namespace data {
 
             ~StrategyCache() noexcept = default;
 
-            virtual bool get(const K& key, V& cacheOut) override
+            [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
                 {
                     concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
@@ -83,19 +83,19 @@ namespace data {
                 _strategy->onClear();
             }
 
-            virtual std::size_t size() const noexcept override
+            [[nodiscard]] virtual std::size_t size() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _map.size();
             }
 
-            virtual std::size_t capacity() const noexcept override
+            [[nodiscard]] virtual std::size_t capacity() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _capacity;
             }
 
-            virtual bool isMtSafe() const noexcept override
+            [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
                 if constexpr (std::is_same_v<Mutex, NoLock>) {

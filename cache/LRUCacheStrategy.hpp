@@ -49,7 +49,7 @@ namespace data {
                 }
             }
 
-            virtual std::optional<K> selectForEviction() override
+            [[nodiscard]] virtual std::optional<K> selectForEviction() override
             {
                 if (_accessOrder.empty()) {
                     return std::nullopt;

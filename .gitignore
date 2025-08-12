@@ -46,3 +46,4 @@ coding-style-reports.log
 # other files
 tiled/
 temp/
+main*.cpp
