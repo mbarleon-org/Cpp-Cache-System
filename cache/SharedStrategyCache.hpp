@@ -45,9 +45,10 @@ namespace data {
             virtual void put(const K& key, const V& value) override
             {
                 concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
-                if (_cache) {
-                    _cache->put(key, value);
+                if (!_cache) {
+                    initialize();
                 }
+                _cache->put(key, value);
             }
 
             virtual void clear() noexcept override
