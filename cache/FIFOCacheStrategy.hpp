@@ -8,13 +8,13 @@
 
 namespace data {
     template<typename K, typename V>
-    class LRUCacheStrategy final: public ACacheStrategy<K, V> {
+    class FIFOCacheStrategy final: public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            LRUCacheStrategy() = default;
-            virtual ~LRUCacheStrategy() noexcept override = default;
+            FIFOCacheStrategy() = default;
+            virtual ~FIFOCacheStrategy() noexcept override = default;
 
             virtual void onClear() noexcept override
             {
@@ -28,7 +28,6 @@ namespace data {
                 if (it == _keyToIterator.end()) {
                     throw std::invalid_argument("Key not in cache");
                 }
-                _accessOrder.splice(_accessOrder.begin(), _accessOrder, it->second);
             }
 
             virtual void onInsert(const K& key) override
