@@ -72,7 +72,9 @@ namespace data {
             Fragmented* f = nullptr;
             {
                 concepts::ReadLock<decltype(_mtx)> r(_mtx);
-                if (!_cache) return false;
+                if (!_cache) {
+                    return false;
+                }
                 f = _cache.get();
             }
             return f->get(key, out);
@@ -83,7 +85,7 @@ namespace data {
             {
                 concepts::WriteLock<decltype(_mtx)> w(_mtx);
                 if (!_cache) {
-                    _cache = std::make_unique<Fragmented>(4, 128);
+                    return;
                 }
                 f = _cache.get();
             }
@@ -118,7 +120,9 @@ namespace data {
         }
 
         [[nodiscard]] bool isMtSafe() const noexcept override {
-            if constexpr (std::is_same_v<WrapperMutex, NoLock>) return false;
+            if constexpr (std::is_same_v<WrapperMutex, NoLock>) {
+                return false;
+            }
             return true;
         }
 
