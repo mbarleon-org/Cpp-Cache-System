@@ -97,7 +97,7 @@ namespace data {
 
             std::size_t _capacity = 0;
             std::size_t _protCap = 0;
-            double _protRatio = 0.67;
+            const double _protRatio = 0.67;
             std::list<K> _prob;
             std::list<K> _prot;
             std::unordered_map<K, typename std::list<K>::iterator> _posProb;
