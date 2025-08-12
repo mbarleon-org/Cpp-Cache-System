@@ -7,6 +7,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "StrategyCache.hpp"
+#include "IStrategyCache.hpp"
 #include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
@@ -41,44 +42,55 @@ namespace data {
         friend class utils::Singleton<MethodCacheManager<RegMutex>>;
 
     public:
-        template<typename K, typename V, typename Strategy = LRUCacheStrategy<K,V>,
-            typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename CacheMutex = std::shared_mutex>
-        requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<CacheMutex>
-        [[nodiscard]] StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>& getMethodCache(
-            const std::string& className, const std::string& methodName, std::size_t capacity = 128)
+        template<typename K, typename V, typename Strategy = LRUCacheStrategy<K,V>, typename Hash = std::hash<K>,
+            typename Eq = std::equal_to<K>, typename CacheMutex = std::shared_mutex,
+            typename CacheType = StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>>
+        requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<CacheMutex> && concepts::CacheLike<CacheType, K, V>
+        [[nodiscard]] IStrategyCache<K, V>& getMethodCache(const std::string& className, const std::string& methodName,
+            std::size_t capacity = 128, std::size_t fragments = 1)
         {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
-                auto it = _caches.find(key);
-                if (it != _caches.end()) {
-                    return *static_cast<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>*>(it->second.get());
+                if (auto it = _caches.find(key); it != _caches.end()) {
+                    return *static_cast<IStrategyCache<K, V>*>(it->second.get());
                 }
             }
 
             concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
-            auto it = _caches.find(key);
-            if (it == _caches.end()) {
-                auto up = std::make_unique<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>>(capacity);
-                auto *raw = up.get();
-                _caches.emplace(
-                    std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple(
-                        std::shared_ptr<void>(
-                            up.release(), [](void* p){
-                                delete static_cast<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>*>(p);
-                            }
-                        )
-                    )
-                );
-                return *raw;
+            if (auto it = _caches.find(key); it != _caches.end()) {
+                return *static_cast<IStrategyCache<K, V>*>(it->second.get());
             }
-            return *static_cast<StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>*>(it->second.get());
+
+            using CacheT = CacheType;
+
+            auto sp = allocateCache<CacheT, K, V>(fragments, capacity);
+            CacheT* raw = sp.get();
+            _caches.emplace(key, std::shared_ptr<void>(std::move(sp)));
+            return *raw;
         }
 
         private:
             explicit MethodCacheManager() = default;
-            virtual ~MethodCacheManager() noexcept override = default;
+            ~MethodCacheManager() noexcept = default;
+
+            template<typename CacheT>
+            struct NoDelete {
+                void operator()(CacheT*) const noexcept {}
+            };
+
+            template<typename CacheT, typename K, typename V>
+            std::shared_ptr<CacheT> allocateCache(std::size_t fragments, std::size_t capacity) {
+                if constexpr (concepts::SharedCacheLike<CacheT, K, V>) {
+                    auto* p = std::addressof(CacheT::getInstance());
+                    return std::shared_ptr<CacheT>(p, NoDelete<CacheT>{});
+                } else if constexpr (concepts::FragmentedCacheLike<CacheT, K, V>) {
+                    return std::make_shared<CacheT>(fragments, capacity);
+                } else {
+                    return std::make_shared<CacheT>(capacity);
+                }
+            }
 
             mutable RegMutex _mtx;
             std::unordered_map<CacheKey, std::shared_ptr<void>, CacheKeyHash> _caches;

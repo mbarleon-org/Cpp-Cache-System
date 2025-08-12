@@ -3,6 +3,7 @@
 #include <memory>
 #include <stdexcept>
 #include <functional>
+#include <type_traits>
 #include <shared_mutex>
 #include "StrategyCache.hpp"
 #include "../utils/NoLock.hpp"
@@ -17,6 +18,10 @@ namespace data {
     class SharedStrategyCache: public IStrategyCache<K, V>, public utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>> {
         friend class utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>>;
         public:
+            using KeyType = K;
+            using ValType = V;
+            using IsSharedCache = void;
+
             virtual ~SharedStrategyCache() noexcept override = default;
 
             [[nodiscard]] bool isCacheInitialized() const noexcept
@@ -45,10 +50,9 @@ namespace data {
             virtual void put(const K& key, const V& value) override
             {
                 concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
-                if (!_cache) {
-                    initialize();
+                if (_cache) {
+                    _cache->put(key, value);
                 }
-                _cache->put(key, value);
             }
 
             virtual void clear() noexcept override
@@ -83,6 +87,6 @@ namespace data {
             explicit SharedStrategyCache() = default;
 
             mutable Mutex _mtx;
-            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, Mutex>> _cache;
+            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, NoLock>> _cache;
     };
 }

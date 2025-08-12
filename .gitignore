@@ -47,3 +47,4 @@ coding-style-reports.log
 tiled/
 temp/
 main*.cpp
+Vector.hpp

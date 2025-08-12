@@ -17,6 +17,9 @@ namespace data {
     requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex>
     class StrategyCache final: public IStrategyCache<K, V> {
         public:
+            using KeyType = K;
+            using ValType = V;
+
             explicit StrategyCache(std::size_t cap = 128): _capacity(cap)
             {
                 if (cap < 1) {

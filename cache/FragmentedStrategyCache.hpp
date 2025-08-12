@@ -19,6 +19,10 @@ namespace data {
     requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex> && concepts::MutexLike<InnerMutex>
     class FragmentedStrategyCache final: public IStrategyCache<K, V> {
         public:
+            using KeyType = K;
+            using ValType = V;
+            using IsFragmentedCache = void;
+
             explicit FragmentedStrategyCache(std::size_t fragments, std::size_t cap = 128):
                 _nfragments(fragments), _capacity(cap),
                 _capacity_per_fragment(std::max<std::size_t>(1, cap / std::max<std::size_t>(1, fragments)))
