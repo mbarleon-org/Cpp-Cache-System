@@ -73,7 +73,10 @@ namespace data {
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
                 concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
-                return _cache ? _cache->isMtSafe() : false;
+                if constexpr (std::is_same_v<Mutex, NoLock>) {
+                    return false;
+                }
+                return true;
             }
 
         private:
