@@ -12,9 +12,17 @@
 #include "../utils/Concepts.hpp"
 
 namespace data {
-    template<typename K, typename V, typename Strategy = LRUCacheStrategy<K, V>,
-        typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename Mutex = std::shared_mutex>
-    requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex>
+
+    template<
+                typename K, typename V,
+                typename Strategy = LRUCacheStrategy<K, V>,
+                typename Hash = std::hash<K>,
+                typename Eq = std::equal_to<K>,
+                typename Mutex = std::shared_mutex
+    >
+    requires    concepts::StrategyLike<Strategy, K, V> &&
+                concepts::MutexLike<Mutex>
+
     class StrategyCache final: public IStrategyCache<K, V> {
         public:
             using KeyType = K;

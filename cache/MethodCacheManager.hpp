@@ -42,12 +42,23 @@ namespace data {
         friend class utils::Singleton<MethodCacheManager<RegMutex>>;
 
     public:
-        template<typename K, typename V, typename Strategy = LRUCacheStrategy<K,V>, typename Hash = std::hash<K>,
-            typename Eq = std::equal_to<K>, typename CacheMutex = std::shared_mutex,
-            typename CacheType = StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>>
-        requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<CacheMutex> && concepts::CacheLike<CacheType, K, V>
-        [[nodiscard]] IStrategyCache<K, V>& getMethodCache(const std::string& className, const std::string& methodName,
-            std::size_t capacity = 128, std::size_t fragments = 1)
+        template<
+                    typename K, typename V,
+                    typename Strategy = LRUCacheStrategy<K,V>,
+                    typename Hash = std::hash<K>,
+                    typename Eq = std::equal_to<K>,
+                    typename CacheMutex = std::shared_mutex,
+                    typename CacheType = StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>
+        >
+        requires    concepts::StrategyLike<Strategy, K, V> &&
+                    concepts::MutexLike<CacheMutex> &&
+                    concepts::CacheLike<CacheType, K, V>
+
+        [[nodiscard]] IStrategyCache<K, V>& getMethodCache(
+                    const std::string& className,
+                    const std::string& methodName,
+                    std::size_t capacity = 128,
+                    std::size_t fragments = 1)
         {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 
@@ -81,6 +92,7 @@ namespace data {
             };
 
             template<typename CacheT, typename K, typename V>
+            requires concepts::CacheLike<CacheT, K, V>
             std::shared_ptr<CacheT> allocateCache(std::size_t fragments, std::size_t capacity) {
                 if constexpr (concepts::SharedCacheLike<CacheT, K, V>) {
                     auto* p = std::addressof(CacheT::getInstance());

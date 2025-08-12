@@ -12,11 +12,22 @@
 #include "../utils/Singleton.hpp"
 
 namespace data {
-    template<typename K, typename V, typename Strategy = LRUCacheStrategy<K, V>,
-        typename Hash = std::hash<K>, typename Eq = std::equal_to<K>, typename Mutex = std::shared_mutex>
-    requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex>
-    class SharedStrategyCache: public IStrategyCache<K, V>, public utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>> {
+
+    template<
+                typename K, typename V,
+                typename Strategy = LRUCacheStrategy<K, V>,
+                typename Hash = std::hash<K>,
+                typename Eq = std::equal_to<K>,
+                typename Mutex = std::shared_mutex
+    >
+    requires    concepts::StrategyLike<Strategy, K, V> &&
+                concepts::MutexLike<Mutex>
+
+    class SharedStrategyCache:
+        public IStrategyCache<K, V>,
+        public utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>> {
         friend class utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>>;
+        
         public:
             using KeyType = K;
             using ValType = V;
