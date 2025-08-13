@@ -15,7 +15,7 @@ namespace data {
             SLRUCacheStrategy() = default;
             ~SLRUCacheStrategy() noexcept override = default;
 
-            void onClear() noexcept override
+            virtual void onClear() noexcept override
             {
                 _prob.clear();
                 _prot.clear();
@@ -23,17 +23,17 @@ namespace data {
                 _posProt.clear();
             }
 
-            void onInsert(const K& key) override
+            virtual void onInsert(const K& key) override
             {
                 _prob.push_front(key);
                 _posProb.emplace(key, _prob.begin());
             }
 
-            void onAccess(const K& key) override
+            virtual bool onAccess(const K& key) override
             {
                 if (auto it = _posProt.find(key); it != _posProt.end()) {
                     _prot.splice(_prot.begin(), _prot, it->second);
-                    return;
+                    return true;
                 }
                 if (auto it = _posProb.find(key); it != _posProb.end()) {
                     _prob.erase(it->second);
@@ -41,12 +41,12 @@ namespace data {
                     _prot.push_front(key);
                     _posProt.emplace(key, _prot.begin());
                     enforceProtectedCap();
-                    return;
+                    return true;
                 }
-                throw std::invalid_argument("Key not in cache");
+                return false;
             }
 
-            void onRemove(const K& key) override
+            virtual void onRemove(const K& key) override
             {
                 if (auto it = _posProb.find(key); it != _posProb.end()) {
                     _prob.erase(it->second);
@@ -59,7 +59,7 @@ namespace data {
                 }
             }
 
-            [[nodiscard]] std::optional<K> selectForEviction() override
+            [[nodiscard]] virtual std::optional<K> selectForEviction() override
             {
                 if (!_prob.empty()) {
                     return _prob.back();
@@ -71,7 +71,7 @@ namespace data {
             }
 
         protected:
-            void reserve_worker(std::size_t cap) override
+            virtual void reserve_worker(std::size_t cap) override
             {
                 if (cap > _capacity) {
                     _capacity = cap;
@@ -87,7 +87,7 @@ namespace data {
             {
                 while (_protCap > 0 && _prot.size() > _protCap) {
                     const K& demoteKey = _prot.back();
-                    const auto it = _posProt.find(demoteKey);
+                    auto it = _posProt.find(demoteKey);
                     _prot.pop_back();
                     _posProt.erase(it);
                     _prob.push_front(demoteKey);
@@ -95,12 +95,15 @@ namespace data {
                 }
             }
 
+            using ListType = std::list<K>;
+            using MapType = std::unordered_map<K, typename ListType::iterator>;
+
             std::size_t _capacity = 0;
             std::size_t _protCap = 0;
             const double _protRatio = 0.67;
-            std::list<K> _prob;
-            std::list<K> _prot;
-            std::unordered_map<K, typename std::list<K>::iterator> _posProb;
-            std::unordered_map<K, typename std::list<K>::iterator> _posProt;
+            ListType _prob;
+            ListType _prot;
+            MapType _posProb;
+            MapType _posProt;
     };
 }

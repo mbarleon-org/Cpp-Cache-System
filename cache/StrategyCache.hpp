@@ -46,16 +46,14 @@ namespace data {
             {
                 {
                     MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
-                    const auto it = _map.find(key);
+                    auto it = _map.find(key);
                     if (it == _map.end()) {
                         return false;
                     }
                 }
                 MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
-                const auto it = _map.find(key);
-                try {
-                    _strategy->onAccess(key);
-                } catch (const std::invalid_argument &e) {
+                auto it = _map.find(key);
+                if (!_strategy->onAccess(key)) {
                     clear();
                     return false;
                 }
@@ -66,18 +64,16 @@ namespace data {
             virtual void put(const K& key, const V& value) override
             {
                 MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
-                const auto it = _map.find(key);
+                auto it = _map.find(key);
                 if (it != _map.end()) {
                     it->second = value;
-                    try {
-                        _strategy->onAccess(key);
-                    } catch (const std::invalid_argument &e) {
+                    if (!_strategy->onAccess(key)) {
                         clear();
                     }
                     return;
                 }
                 if (_map.size() >= _capacity) {
-                    const auto evictKey = _strategy->selectForEviction();
+                    auto evictKey = _strategy->selectForEviction();
                     if (evictKey) {
                         _map.erase(*evictKey);
                         _strategy->onRemove(*evictKey);

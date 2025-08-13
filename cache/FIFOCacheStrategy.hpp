@@ -22,12 +22,13 @@ namespace data {
                 _keyToIterator.clear();
             }
 
-            virtual void onAccess(const K& key) override
+            virtual bool onAccess(const K& key) override
             {
-                const auto it = _keyToIterator.find(key);
+                auto it = _keyToIterator.find(key);
                 if (it == _keyToIterator.end()) {
-                    throw std::invalid_argument("Key not in cache");
+                    return false;
                 }
+                return true;
             }
 
             virtual void onInsert(const K& key) override
@@ -38,7 +39,7 @@ namespace data {
 
             virtual void onRemove(const K& key) override
             {
-                const auto it = _keyToIterator.find(key);
+                auto it = _keyToIterator.find(key);
                 if (it != _keyToIterator.end()) {
                     _accessOrder.erase(it->second);
                     _keyToIterator.erase(it);
@@ -63,8 +64,11 @@ namespace data {
             }
 
         private:
+            using ListType = std::list<K>;
+            using MapType = std::unordered_map<K, typename ListType::iterator>;
+
             std::size_t _capacity = 0;
-            std::list<K> _accessOrder;
-            std::unordered_map<K, typename std::list<K>::iterator> _keyToIterator;
+            ListType _accessOrder;
+            MapType _keyToIterator;
     };
 }

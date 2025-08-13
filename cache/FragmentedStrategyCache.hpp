@@ -55,7 +55,7 @@ namespace data {
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
-                const auto idx = getCacheIndex(key);
+                auto idx = getCacheIndex(key);
                 std::unique_ptr<Fragment>& slot = getFragmentSlot(idx);
                 Fragment *local = nullptr;
 
@@ -73,7 +73,7 @@ namespace data {
             {
                 Fragment* fragmentPtr = nullptr;
                 {
-                    const auto idx = getCacheIndex(key);
+                    auto idx = getCacheIndex(key);
                     MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                     auto& slot = _caches[idx];
                     if (!slot) {
