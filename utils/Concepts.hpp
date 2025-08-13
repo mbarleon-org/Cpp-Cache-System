@@ -33,10 +33,4 @@ namespace concepts {
         { m.unlock_shared() } -> std::same_as<void>;
         { m.try_lock_shared() } -> std::convertible_to<bool>;
     };
-
-    template<typename M>
-    using ReadLock  = std::conditional_t<SharedMutexLike<M>, std::shared_lock<M>, std::unique_lock<M>>;
-
-    template<typename M>
-    using WriteLock = std::unique_lock<M>;
 }

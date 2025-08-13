@@ -10,6 +10,7 @@
 #include "../utils/NoLock.hpp"
 #include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
+#include "../utils/MutexLocks.hpp"
 
 namespace data {
 
@@ -20,7 +21,7 @@ namespace data {
                 typename Eq = std::equal_to<K>,
                 typename Mutex = std::shared_mutex
     >
-    
+
     requires    concepts::StrategyLike<Strategy, K, V> &&
                 concepts::MutexLike<Mutex>
 
@@ -44,13 +45,13 @@ namespace data {
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
                 {
-                    concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
                     const auto it = _map.find(key);
                     if (it == _map.end()) {
                         return false;
                     }
                 }
-                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 const auto it = _map.find(key);
                 try {
                     _strategy->onAccess(key);
@@ -64,7 +65,7 @@ namespace data {
 
             virtual void put(const K& key, const V& value) override
             {
-                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 const auto it = _map.find(key);
                 if (it != _map.end()) {
                     it->second = value;
@@ -90,14 +91,14 @@ namespace data {
 
             virtual void clear() noexcept override
             {
-                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 _map.clear();
                 _strategy->onClear();
             }
 
             [[nodiscard]] virtual std::size_t size() const noexcept override
             {
-                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _map.size();
             }
 

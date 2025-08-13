@@ -9,6 +9,7 @@
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
 #include "FragmentedStrategyCache.hpp"
+#include "../utils/MutexLocks.hpp"
 
 namespace data {
 
@@ -57,21 +58,21 @@ namespace data {
         ~SharedFragmentedStrategyCache() noexcept override = default;
 
         void initialize(std::size_t fragments = 4, std::size_t cap = 128) {
-            concepts::WriteLock<decltype(_mtx)> w(_mtx);
+            MutexLocks::WriteLock<decltype(_mtx)> w(_mtx);
             if (!_cache) {
                 _cache = std::make_unique<Fragmented>(fragments, cap);
             }
         }
 
         [[nodiscard]] bool isCacheInitialized() const noexcept {
-            concepts::ReadLock<decltype(_mtx)> r(_mtx);
+            MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
             return static_cast<bool>(_cache);
         }
 
         [[nodiscard]] bool get(const K& key, V& out) override {
             Fragmented* f = nullptr;
             {
-                concepts::ReadLock<decltype(_mtx)> r(_mtx);
+                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 if (!_cache) {
                     return false;
                 }
@@ -83,7 +84,7 @@ namespace data {
         void put(const K& key, const V& val) override {
             Fragmented* f = nullptr;
             {
-                concepts::WriteLock<decltype(_mtx)> w(_mtx);
+                MutexLocks::WriteLock<decltype(_mtx)> w(_mtx);
                 if (!_cache) {
                     return;
                 }
@@ -95,7 +96,7 @@ namespace data {
         void clear() noexcept override {
             Fragmented* f = nullptr;
             {
-                concepts::ReadLock<decltype(_mtx)> r(_mtx);
+                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
             if (f) f->clear();
@@ -104,7 +105,7 @@ namespace data {
         [[nodiscard]] std::size_t size() const noexcept override {
             Fragmented* f = nullptr;
             {
-                concepts::ReadLock<decltype(_mtx)> r(_mtx);
+                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
             return f ? f->size() : 0;
@@ -113,7 +114,7 @@ namespace data {
         [[nodiscard]] std::size_t capacity() const noexcept override {
             Fragmented* f = nullptr;
             {
-                concepts::ReadLock<decltype(_mtx)> r(_mtx);
+                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
             return f ? f->capacity() : 0;

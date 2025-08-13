@@ -11,6 +11,7 @@
 #include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
+#include "../utils/MutexLocks.hpp"
 
 struct CacheKey {
     std::string cls;
@@ -63,13 +64,13 @@ namespace data {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 
             {
-                concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 if (auto it = _caches.find(key); it != _caches.end()) {
                     return *static_cast<IStrategyCache<K, V>*>(it->second.get());
                 }
             }
 
-            concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+            MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
             if (auto it = _caches.find(key); it != _caches.end()) {
                 return *static_cast<IStrategyCache<K, V>*>(it->second.get());
             }

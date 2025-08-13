@@ -11,6 +11,7 @@
 #include "../utils/NoLock.hpp"
 #include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
+#include "../utils/MutexLocks.hpp"
 
 namespace data {
 
@@ -59,7 +60,7 @@ namespace data {
                 Fragment *local = nullptr;
 
                 {
-                    concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
                     if (!slot) {
                         return false;
                     }
@@ -73,7 +74,7 @@ namespace data {
                 Fragment* fragmentPtr = nullptr;
                 {
                     const auto idx = getCacheIndex(key);
-                    concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+                    MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                     auto& slot = _caches[idx];
                     if (!slot) {
                         slot = std::make_unique<Fragment>(_capacity_per_fragment);
@@ -85,7 +86,7 @@ namespace data {
 
             virtual void clear() noexcept override
             {
-                concepts::WriteLock<decltype(_mtx)> wlock(_mtx);
+                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 for (auto& cache : _caches) {
                     if (cache) {
                         cache->clear();
@@ -97,7 +98,7 @@ namespace data {
             {
                 std::vector<Fragment*> fragments;
                 {
-                    concepts::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
                     fragments.reserve(_caches.size());
                     for (auto& up : _caches) {
                         if (up) {
