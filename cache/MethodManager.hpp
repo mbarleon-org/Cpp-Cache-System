@@ -8,10 +8,10 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "strategy/LRU.hpp"
-#include "IStrategyCache.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
 #include "../utils/MutexLocks.hpp"
+#include "interfaces/IStrategyCache.hpp"
 
 struct CacheKey {
     std::string cls;

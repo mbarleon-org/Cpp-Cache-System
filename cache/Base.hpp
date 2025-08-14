@@ -6,10 +6,10 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "strategy/LRU.hpp"
-#include "IStrategyCache.hpp"
+#include "interfaces/IStrategyCache.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/MutexLocks.hpp"
-#include "strategy/ICacheStrategy.hpp"
+#include "strategy/interfaces/ICacheStrategy.hpp"
 
 namespace cache {
 

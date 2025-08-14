@@ -8,9 +8,9 @@
 #include <functional>
 #include <shared_mutex>
 #include "strategy/LRU.hpp"
-#include "IStrategyCache.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/MutexLocks.hpp"
+#include "interfaces/IStrategyCache.hpp"
 
 namespace cache {
 
