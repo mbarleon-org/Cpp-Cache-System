@@ -89,7 +89,9 @@ namespace cache::strategy {
                     }
 
                     std::size_t jumps = 1 + (_dist(_rng) % 7);
-                    while (jumps-- && it != _index.end()) ++it;
+                    while (jumps-- && it != _index.end()) {
+                        ++it;
+                    }
                 }
 
                 if (!worst) {
@@ -107,13 +109,13 @@ namespace cache::strategy {
 
         private:
             struct LFUMeta {
-                std::uint8_t  hits = 0;
+                std::uint8_t hits = 0;
                 std::uint16_t ldt  = 0;
             };
 
             struct Candidate {
                 K key;
-                std::uint8_t  hits;
+                std::uint8_t hits;
                 std::uint16_t ldt;
                 typename std::list<K>::iterator idxIt;
             };
