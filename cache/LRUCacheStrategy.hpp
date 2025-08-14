@@ -22,7 +22,7 @@ namespace data {
                 _keyToIterator.clear();
             }
 
-            virtual bool onAccess(const K& key) override
+            [[nodiscard]] virtual bool onAccess(const K& key) override
             {
                 auto it = _keyToIterator.find(key);
                 if (it == _keyToIterator.end()) {
@@ -32,19 +32,21 @@ namespace data {
                 return true;
             }
 
-            virtual void onInsert(const K& key) override
+            [[nodiscard]] virtual bool onInsert(const K& key) override
             {
                 _accessOrder.push_front(key);
                 _keyToIterator.emplace(key, _accessOrder.begin());
+                return true;
             }
 
-            virtual void onRemove(const K& key) override
+            [[nodiscard]] virtual bool onRemove(const K& key) override
             {
                 auto it = _keyToIterator.find(key);
                 if (it != _keyToIterator.end()) {
                     _accessOrder.erase(it->second);
                     _keyToIterator.erase(it);
                 }
+                return true;
             }
 
             [[nodiscard]] virtual std::optional<K> selectForEviction() override

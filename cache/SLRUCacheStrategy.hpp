@@ -23,13 +23,14 @@ namespace data {
                 _posProt.clear();
             }
 
-            virtual void onInsert(const K& key) override
+            [[nodiscard]] virtual bool onInsert(const K& key) override
             {
                 _prob.push_front(key);
                 _posProb.emplace(key, _prob.begin());
+                return true;
             }
 
-            virtual bool onAccess(const K& key) override
+            [[nodiscard]] virtual bool onAccess(const K& key) override
             {
                 if (auto it = _posProt.find(key); it != _posProt.end()) {
                     _prot.splice(_prot.begin(), _prot, it->second);
@@ -46,17 +47,18 @@ namespace data {
                 return false;
             }
 
-            virtual void onRemove(const K& key) override
+            [[nodiscard]] virtual bool onRemove(const K& key) override
             {
                 if (auto it = _posProb.find(key); it != _posProb.end()) {
                     _prob.erase(it->second);
                     _posProb.erase(it);
-                    return;
+                    return true;
                 }
                 if (auto it = _posProt.find(key); it != _posProt.end()) {
                     _prot.erase(it->second);
                     _posProt.erase(it);
                 }
+                return true;
             }
 
             [[nodiscard]] virtual std::optional<K> selectForEviction() override

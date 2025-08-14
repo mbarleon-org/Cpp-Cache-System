@@ -24,7 +24,7 @@ namespace data {
                 _posToAm.clear();
             }
 
-            virtual bool onAccess(const K& key) override
+            [[nodiscard]] virtual bool onAccess(const K& key) override
             {
                 if (auto it = _posToAm.find(key); it != _posToAm.end()) {
                     _am.splice(_am.begin(), _am, it->second);
@@ -40,23 +40,25 @@ namespace data {
                 return false;
             }
 
-            virtual void onInsert(const K& key) override
+            [[nodiscard]] virtual bool onInsert(const K& key) override
             {
                 _a1.push_front(key);
                 _posToA1.emplace(key, _a1.begin());
+                return true;
             }
 
-            virtual void onRemove(const K& key) override
+            [[nodiscard]] virtual bool onRemove(const K& key) override
             {
                 if (auto it = _posToA1.find(key); it != _posToA1.end()) {
                     _a1.erase(it->second);
                     _posToA1.erase(it);
-                    return;
+                    return true;
                 }
                 if (auto it = _posToAm.find(key); it != _posToAm.end()) {
                     _am.erase(it->second);
                     _posToAm.erase(it);
                 }
+                return true;
             }
 
             [[nodiscard]] virtual std::optional<K> selectForEviction() override

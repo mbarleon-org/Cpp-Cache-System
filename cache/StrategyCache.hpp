@@ -76,12 +76,16 @@ namespace data {
                     auto evictKey = _strategy->selectForEviction();
                     if (evictKey) {
                         _map.erase(*evictKey);
-                        _strategy->onRemove(*evictKey);
+                        if (!_strategy->onRemove(*evictKey)) {
+                            clear();
+                        }
                     }
                 }
                 if (_map.size() < _capacity) {
                     _map[key] = value;
-                    _strategy->onInsert(key);
+                    if (!_strategy->onInsert(key)) {
+                        clear();
+                    }
                 }
             }
 
