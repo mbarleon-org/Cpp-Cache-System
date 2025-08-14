@@ -8,8 +8,8 @@
 #include <functional>
 #include <shared_mutex>
 #include "strategy/LRU.hpp"
-#include "../utils/Concepts.hpp"
-#include "../utils/MutexLocks.hpp"
+#include "helpers/MutexLocks.hpp"
+#include "concepts/CacheConcepts.hpp"
 #include "interfaces/IStrategyCache.hpp"
 
 namespace cache {
@@ -59,7 +59,7 @@ namespace cache {
                 Fragment *local = nullptr;
 
                 {
-                    MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                     if (!slot) {
                         return false;
                     }
@@ -73,7 +73,7 @@ namespace cache {
                 Fragment *fragmentPtr = nullptr;
                 {
                     auto idx = getCacheIndex(key);
-                    MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                    mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                     auto& slot = _caches[idx];
                     if (!slot) {
                         slot = std::make_unique<Fragment>(_capacity_per_fragment);
@@ -85,7 +85,7 @@ namespace cache {
 
             virtual void clear() noexcept override
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 for (auto& cache : _caches) {
                     if (cache) {
                         cache->clear();
@@ -97,7 +97,7 @@ namespace cache {
             {
                 std::vector<Fragment*> fragments;
                 {
-                    MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                     fragments.reserve(_caches.size());
                     for (auto& up : _caches) {
                         if (up) {
@@ -119,7 +119,7 @@ namespace cache {
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                if constexpr (std::is_same_v<Mutex, MutexLocks::NoLock>) {
+                if constexpr (std::is_same_v<Mutex, mutex_locks::NoLock>) {
                     return false;
                 }
                 return true;

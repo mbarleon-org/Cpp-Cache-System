@@ -5,9 +5,9 @@
 #include <shared_mutex>
 #include "Fragmented.hpp"
 #include "strategy/LRU.hpp"
-#include "../utils/Concepts.hpp"
-#include "../utils/Singleton.hpp"
-#include "../utils/MutexLocks.hpp"
+#include "utils/Singleton.hpp"
+#include "helpers/MutexLocks.hpp"
+#include "concepts/CacheConcepts.hpp"
 #include "interfaces/IStrategyCache.hpp"
 
 namespace cache {
@@ -57,21 +57,21 @@ namespace cache {
         ~SharedFragmented() noexcept override = default;
 
         void initialize(std::size_t fragments = 4, std::size_t cap = 128) {
-            MutexLocks::WriteLock<decltype(_mtx)> w(_mtx);
+            mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
             if (!_cache) {
                 _cache = std::make_unique<FragmentedType>(fragments, cap);
             }
         }
 
         [[nodiscard]] bool isCacheInitialized() const noexcept {
-            MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
+            mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
             return static_cast<bool>(_cache);
         }
 
         [[nodiscard]] bool get(const K& key, V& out) override {
             FragmentedType *f = nullptr;
             {
-                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 if (!_cache) {
                     return false;
                 }
@@ -83,7 +83,7 @@ namespace cache {
         void put(const K& key, const V& val) override {
             FragmentedType *f = nullptr;
             {
-                MutexLocks::WriteLock<decltype(_mtx)> w(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
                 if (!_cache) {
                     return;
                 }
@@ -95,7 +95,7 @@ namespace cache {
         void clear() noexcept override {
             FragmentedType *f = nullptr;
             {
-                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
             if (f) f->clear();
@@ -104,7 +104,7 @@ namespace cache {
         [[nodiscard]] std::size_t size() const noexcept override {
             FragmentedType *f = nullptr;
             {
-                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
             return f ? f->size() : 0;
@@ -113,14 +113,14 @@ namespace cache {
         [[nodiscard]] std::size_t capacity() const noexcept override {
             FragmentedType *f = nullptr;
             {
-                MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
             return f ? f->capacity() : 0;
         }
 
         [[nodiscard]] bool isMtSafe() const noexcept override {
-            if constexpr (std::is_same_v<WrapperMutex, MutexLocks::NoLock>) {
+            if constexpr (std::is_same_v<WrapperMutex, mutex_locks::NoLock>) {
                 return false;
             }
             return true;

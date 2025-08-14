@@ -6,9 +6,9 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "strategy/LRU.hpp"
+#include "helpers/MutexLocks.hpp"
+#include "concepts/CacheConcepts.hpp"
 #include "interfaces/IStrategyCache.hpp"
-#include "../utils/Concepts.hpp"
-#include "../utils/MutexLocks.hpp"
 #include "strategy/interfaces/ICacheStrategy.hpp"
 
 namespace cache {
@@ -44,13 +44,13 @@ namespace cache {
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
                 {
-                    MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                     auto it = _map.find(key);
                     if (it == _map.end()) {
                         return false;
                     }
                 }
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 auto it = _map.find(key);
                 if (!_strategy->onAccess(key)) {
                     clear();
@@ -62,7 +62,7 @@ namespace cache {
 
             virtual void put(const K& key, const V& value) override
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 auto it = _map.find(key);
                 if (it != _map.end()) {
                     it->second = value;
@@ -90,14 +90,14 @@ namespace cache {
 
             virtual void clear() noexcept override
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 _map.clear();
                 _strategy->onClear();
             }
 
             [[nodiscard]] virtual std::size_t size() const noexcept override
             {
-                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _map.size();
             }
 
@@ -108,7 +108,7 @@ namespace cache {
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                if constexpr (std::is_same_v<Mutex, MutexLocks::NoLock>) {
+                if constexpr (std::is_same_v<Mutex, mutex_locks::NoLock>) {
                     return false;
                 }
                 return true;

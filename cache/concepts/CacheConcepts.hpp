@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../cache/interfaces/IStrategyCache.hpp"
-#include "../cache/strategy/interfaces/ICacheStrategy.hpp"
+#include "../interfaces/IStrategyCache.hpp"
+#include "../strategy/interfaces/ICacheStrategy.hpp"
 
-namespace concepts {
+namespace cache::concepts {
     template<typename S, typename K, typename V>
     concept StrategyLike = std::is_base_of_v<cache::strategy::ICacheStrategy<typename S::KeyType, typename S::ValType>, S>;
 
@@ -18,19 +18,5 @@ namespace concepts {
     template<typename C, typename K, typename V>
     concept SharedCacheLike = CacheLike<C, K, V> && requires {
         typename C::IsSharedCache;
-    };
-
-    template<typename M>
-    concept MutexLike = requires(M& m) {
-        { m.lock() } -> std::same_as<void>;
-        { m.unlock() } -> std::same_as<void>;
-        { m.try_lock() } -> std::convertible_to<bool>;
-    };
-
-    template<typename M>
-    concept SharedMutexLike = requires(M& m) {
-        { m.lock_shared() } -> std::same_as<void>;
-        { m.unlock_shared() } -> std::same_as<void>;
-        { m.try_lock_shared() } -> std::convertible_to<bool>;
     };
 }

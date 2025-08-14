@@ -7,9 +7,9 @@
 #include <type_traits>
 #include <shared_mutex>
 #include "strategy/LRU.hpp"
-#include "../utils/Concepts.hpp"
-#include "../utils/Singleton.hpp"
-#include "../utils/MutexLocks.hpp"
+#include "utils/Singleton.hpp"
+#include "helpers/MutexLocks.hpp"
+#include "concepts/CacheConcepts.hpp"
 
 namespace cache {
 
@@ -38,21 +38,21 @@ namespace cache {
 
             [[nodiscard]] bool isCacheInitialized() const noexcept
             {
-                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return static_cast<bool>(_cache);
             }
 
             void initialize(std::size_t cap = 128)
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 if (!_cache) {
-                    _cache = std::make_unique<Base<K, V, Strategy, Hash, Eq, MutexLocks::NoLock>>(cap);
+                    _cache = std::make_unique<Base<K, V, Strategy, Hash, Eq, mutex_locks::NoLock>>(cap);
                 }
             }
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 if (_cache) {
                     return _cache->get(key, cacheOut);
                 }
@@ -61,7 +61,7 @@ namespace cache {
 
             virtual void put(const K& key, const V& value) override
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 if (_cache) {
                     _cache->put(key, value);
                 }
@@ -69,7 +69,7 @@ namespace cache {
 
             virtual void clear() noexcept override
             {
-                MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 if (_cache) {
                     _cache->clear();
                 }
@@ -77,19 +77,19 @@ namespace cache {
 
             [[nodiscard]] virtual std::size_t size() const noexcept override
             {
-                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _cache ? _cache->size() : 0;
             }
 
             [[nodiscard]] virtual std::size_t capacity() const noexcept override
             {
-                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 return _cache ? _cache->capacity() : 0;
             }
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                if constexpr (std::is_same_v<Mutex, MutexLocks::NoLock>) {
+                if constexpr (std::is_same_v<Mutex, mutex_locks::NoLock>) {
                     return false;
                 }
                 return true;
@@ -99,6 +99,6 @@ namespace cache {
             explicit Shared() = default;
 
             mutable Mutex _mtx;
-            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, MutexLocks::NoLock>> _cache;
+            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, mutex_locks::NoLock>> _cache;
     };
 }

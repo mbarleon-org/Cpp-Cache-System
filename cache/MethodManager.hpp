@@ -8,9 +8,9 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "strategy/LRU.hpp"
-#include "../utils/Concepts.hpp"
-#include "../utils/Singleton.hpp"
-#include "../utils/MutexLocks.hpp"
+#include "utils/Singleton.hpp"
+#include "helpers/MutexLocks.hpp"
+#include "concepts/CacheConcepts.hpp"
 #include "interfaces/IStrategyCache.hpp"
 
 struct CacheKey {
@@ -64,13 +64,13 @@ namespace cache {
             CacheKey key{className, methodName, typeid(K), typeid(V)};
 
             {
-                MutexLocks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
                 if (auto it = _caches.find(key); it != _caches.end()) {
                     return *static_cast<IStrategyCache<K, V>*>(it->second.get());
                 }
             }
 
-            MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
+            mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
             if (auto it = _caches.find(key); it != _caches.end()) {
                 return *static_cast<IStrategyCache<K, V>*>(it->second.get());
             }

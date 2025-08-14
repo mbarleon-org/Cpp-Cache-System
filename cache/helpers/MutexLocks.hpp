@@ -1,9 +1,9 @@
 #pragma once
 
 #include <shared_mutex>
-#include "Concepts.hpp"
+#include "../concepts/MutexConcepts.hpp"
 
-namespace MutexLocks {
+namespace cache::mutex_locks {
     template<typename M>
     using ReadLock  = std::conditional_t<concepts::SharedMutexLike<M>, std::shared_lock<M>, std::unique_lock<M>>;
 
