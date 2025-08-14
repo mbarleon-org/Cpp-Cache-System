@@ -110,7 +110,7 @@ namespace cache::strategy {
         private:
             struct LFUMeta {
                 std::uint8_t hits = 0;
-                std::uint16_t ldt  = 0;
+                std::uint16_t ldt = 0;
             };
 
             struct Candidate {
