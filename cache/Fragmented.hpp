@@ -2,22 +2,21 @@
 
 #include <vector>
 #include <cstddef>
+#include "Base.hpp"
 #include <stdexcept>
 #include <algorithm>
 #include <functional>
 #include <shared_mutex>
-#include "StrategyCache.hpp"
+#include "strategy/LRU.hpp"
 #include "IStrategyCache.hpp"
-#include "../utils/NoLock.hpp"
-#include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/MutexLocks.hpp"
 
-namespace data {
+namespace cache {
 
     template<
                 typename K, typename V,
-                typename Strategy = LRUCacheStrategy<K, V>,
+                typename Strategy = strategy::LRU<K, V>,
                 typename Hash = std::hash<K>,
                 typename Eq = std::equal_to<K>,
                 typename Mutex = std::shared_mutex,
@@ -28,13 +27,13 @@ namespace data {
                 concepts::MutexLike<Mutex> &&
                 concepts::MutexLike<InnerMutex>
 
-    class FragmentedStrategyCache final: public IStrategyCache<K, V> {
+    class Fragmented final: public IStrategyCache<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
             using IsFragmentedCache = void;
 
-            explicit FragmentedStrategyCache(std::size_t fragments = 4, std::size_t cap = 128):
+            explicit Fragmented(std::size_t fragments = 4, std::size_t cap = 128):
                 _nfragments(fragments), _capacity(cap),
                 _capacity_per_fragment(std::max<std::size_t>(1, cap / std::max<std::size_t>(1, fragments)))
             {
@@ -51,7 +50,7 @@ namespace data {
                 }
             }
 
-            virtual ~FragmentedStrategyCache() noexcept override = default;
+            virtual ~Fragmented() noexcept override = default;
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
@@ -71,7 +70,7 @@ namespace data {
 
             virtual void put(const K& key, const V& value) override
             {
-                Fragment* fragmentPtr = nullptr;
+                Fragment *fragmentPtr = nullptr;
                 {
                     auto idx = getCacheIndex(key);
                     MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
@@ -120,14 +119,14 @@ namespace data {
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                if constexpr (std::is_same_v<Mutex, NoLock>) {
+                if constexpr (std::is_same_v<Mutex, MutexLocks::NoLock>) {
                     return false;
                 }
                 return true;
             }
 
         private:
-            using Fragment = StrategyCache<K, V, Strategy, Hash, Eq, InnerMutex>;
+            using Fragment = Base<K, V, Strategy, Hash, Eq, InnerMutex>;
 
             mutable Mutex _mtx;
             const std::size_t _nfragments;

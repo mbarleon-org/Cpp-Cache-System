@@ -1,21 +1,20 @@
 #pragma once
 
 #include <memory>
-#include <shared_mutex>
 #include <type_traits>
+#include <shared_mutex>
+#include "Fragmented.hpp"
+#include "strategy/LRU.hpp"
 #include "IStrategyCache.hpp"
-#include "../utils/NoLock.hpp"
-#include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
-#include "FragmentedStrategyCache.hpp"
 #include "../utils/MutexLocks.hpp"
 
-namespace data {
+namespace cache {
 
     template<
                 typename K, typename V,
-                typename Strategy = LRUCacheStrategy<K, V>,
+                typename Strategy = strategy::LRU<K, V>,
                 typename Hash = std::hash<K>,
                 typename Eq = std::equal_to<K>,
                 typename WrapperMutex = std::shared_mutex,
@@ -28,10 +27,10 @@ namespace data {
                 concepts::MutexLike<FragMutex> &&
                 concepts::MutexLike<FragmentMutex>
 
-    class SharedFragmentedStrategyCache:
+    class SharedFragmented final:
                 public IStrategyCache<K, V>,
                 public utils::Singleton<
-                    SharedFragmentedStrategyCache<
+                    SharedFragmented<
                         K, V,
                         Strategy,
                         Hash,
@@ -43,9 +42,9 @@ namespace data {
                 >
     {
 
-        using Fragmented = FragmentedStrategyCache<K, V, Strategy, Hash, Eq, FragMutex, FragmentMutex>;
+        using FragmentedType = Fragmented<K, V, Strategy, Hash, Eq, FragMutex, FragmentMutex>;
 
-        friend class utils::Singleton<SharedFragmentedStrategyCache<
+        friend class utils::Singleton<SharedFragmented<
             K, V, Strategy, Hash, Eq, WrapperMutex, FragMutex, FragmentMutex>
         >;
 
@@ -55,12 +54,12 @@ namespace data {
         using IsSharedCache = void;
         using IsFragmentedCache = void;
 
-        ~SharedFragmentedStrategyCache() noexcept override = default;
+        ~SharedFragmented() noexcept override = default;
 
         void initialize(std::size_t fragments = 4, std::size_t cap = 128) {
             MutexLocks::WriteLock<decltype(_mtx)> w(_mtx);
             if (!_cache) {
-                _cache = std::make_unique<Fragmented>(fragments, cap);
+                _cache = std::make_unique<FragmentedType>(fragments, cap);
             }
         }
 
@@ -70,7 +69,7 @@ namespace data {
         }
 
         [[nodiscard]] bool get(const K& key, V& out) override {
-            Fragmented* f = nullptr;
+            FragmentedType *f = nullptr;
             {
                 MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 if (!_cache) {
@@ -82,7 +81,7 @@ namespace data {
         }
 
         void put(const K& key, const V& val) override {
-            Fragmented* f = nullptr;
+            FragmentedType *f = nullptr;
             {
                 MutexLocks::WriteLock<decltype(_mtx)> w(_mtx);
                 if (!_cache) {
@@ -94,7 +93,7 @@ namespace data {
         }
 
         void clear() noexcept override {
-            Fragmented* f = nullptr;
+            FragmentedType *f = nullptr;
             {
                 MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
@@ -103,7 +102,7 @@ namespace data {
         }
 
         [[nodiscard]] std::size_t size() const noexcept override {
-            Fragmented* f = nullptr;
+            FragmentedType *f = nullptr;
             {
                 MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
@@ -112,7 +111,7 @@ namespace data {
         }
 
         [[nodiscard]] std::size_t capacity() const noexcept override {
-            Fragmented* f = nullptr;
+            FragmentedType *f = nullptr;
             {
                 MutexLocks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
@@ -121,17 +120,17 @@ namespace data {
         }
 
         [[nodiscard]] bool isMtSafe() const noexcept override {
-            if constexpr (std::is_same_v<WrapperMutex, NoLock>) {
+            if constexpr (std::is_same_v<WrapperMutex, MutexLocks::NoLock>) {
                 return false;
             }
             return true;
         }
 
     private:
-        explicit SharedFragmentedStrategyCache() = default;
+        explicit SharedFragmented() = default;
 
         mutable WrapperMutex _mtx;
-        std::unique_ptr<Fragmented> _cache;
+        std::unique_ptr<FragmentedType> _cache;
     };
 
 }

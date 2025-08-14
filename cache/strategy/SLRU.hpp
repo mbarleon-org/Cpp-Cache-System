@@ -1,19 +1,20 @@
 #pragma once
+
 #include <list>
 #include <optional>
 #include <stdexcept>
 #include <unordered_map>
 #include "ACacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
-    class SLRUCacheStrategy final : public ACacheStrategy<K, V> {
+    class SLRU final : public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            SLRUCacheStrategy() = default;
-            ~SLRUCacheStrategy() noexcept override = default;
+            SLRU() = default;
+            ~SLRU() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

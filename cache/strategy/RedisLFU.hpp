@@ -1,24 +1,23 @@
-// RedisLFUCacheStrategy.hpp
 #pragma once
 
 #include <list>
-#include <unordered_map>
-#include <optional>
 #include <chrono>
 #include <random>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
+#include <unordered_map>
 #include "ACacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
-    class RedisLFUCacheStrategy final : public ACacheStrategy<K, V> {
+    class RedisLFU final : public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            explicit RedisLFUCacheStrategy(): _rng(std::random_device{}()){}
-            virtual ~RedisLFUCacheStrategy() noexcept override = default;
+            explicit RedisLFU(): _rng(std::random_device{}()){}
+            virtual ~RedisLFU() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

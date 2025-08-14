@@ -3,7 +3,7 @@
 #include <cstddef>
 #include "ICacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
     class ACacheStrategy: public ICacheStrategy<K, V> {
         public:

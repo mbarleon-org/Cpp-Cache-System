@@ -6,15 +6,15 @@
 #include <unordered_map>
 #include "ACacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
-    class FIFOCacheStrategy final: public ACacheStrategy<K, V> {
+    class FIFO final: public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            FIFOCacheStrategy() = default;
-            virtual ~FIFOCacheStrategy() noexcept override = default;
+            FIFO() = default;
+            virtual ~FIFO() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

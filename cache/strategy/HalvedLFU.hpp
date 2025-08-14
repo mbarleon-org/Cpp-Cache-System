@@ -7,15 +7,15 @@
 #include <unordered_map>
 #include "ACacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
-    class HalvedLFUCacheStrategy final: public ACacheStrategy<K, V> {
+    class HalvedLFU final: public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            HalvedLFUCacheStrategy() = default;
-            virtual ~HalvedLFUCacheStrategy() noexcept override = default;
+            HalvedLFU() = default;
+            virtual ~HalvedLFU() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

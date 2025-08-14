@@ -1,14 +1,14 @@
 #pragma once
 
 #include "../cache/IStrategyCache.hpp"
-#include "../cache/ICacheStrategy.hpp"
+#include "../cache/strategy/ICacheStrategy.hpp"
 
 namespace concepts {
     template<typename S, typename K, typename V>
-    concept StrategyLike = std::is_base_of_v<data::ICacheStrategy<typename S::KeyType, typename S::ValType>, S>;
+    concept StrategyLike = std::is_base_of_v<cache::strategy::ICacheStrategy<typename S::KeyType, typename S::ValType>, S>;
 
     template<typename C, typename K, typename V>
-    concept CacheLike = std::is_base_of_v<data::IStrategyCache<typename C::KeyType, typename C::ValType>, C>;
+    concept CacheLike = std::is_base_of_v<cache::IStrategyCache<typename C::KeyType, typename C::ValType>, C>;
 
     template<typename C, typename K, typename V>
     concept FragmentedCacheLike = CacheLike<C, K, V> && requires {

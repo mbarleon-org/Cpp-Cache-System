@@ -1,5 +1,6 @@
 #pragma once
 
+#include <shared_mutex>
 #include "Concepts.hpp"
 
 namespace MutexLocks {
@@ -8,4 +9,14 @@ namespace MutexLocks {
 
     template<typename M>
     using WriteLock = std::unique_lock<M>;
+
+    struct NoLock {
+        void lock() noexcept {}
+        void unlock() noexcept {}
+        bool try_lock() noexcept { return true; }
+
+        void lock_shared() noexcept {}
+        void unlock_shared() noexcept {}
+        bool try_lock_shared() noexcept { return true; }
+    };
 }

@@ -2,13 +2,13 @@
 
 #include <string>
 #include <memory>
+#include "Base.hpp"
 #include <typeinfo>
 #include <typeindex>
 #include <shared_mutex>
 #include <unordered_map>
-#include "StrategyCache.hpp"
+#include "strategy/LRU.hpp"
 #include "IStrategyCache.hpp"
-#include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
 #include "../utils/MutexLocks.hpp"
@@ -36,20 +36,20 @@ struct CacheKeyHash {
     }
 };
 
-namespace data {
+namespace cache {
     template<typename RegMutex = std::shared_mutex>
     requires concepts::MutexLike<RegMutex>
-    class MethodCacheManager : public utils::Singleton<MethodCacheManager<RegMutex>> {
-        friend class utils::Singleton<MethodCacheManager<RegMutex>>;
+    class MethodManager final : public utils::Singleton<MethodManager<RegMutex>> {
+        friend class utils::Singleton<MethodManager<RegMutex>>;
 
     public:
         template<
                     typename K, typename V,
-                    typename Strategy = LRUCacheStrategy<K,V>,
+                    typename Strategy = strategy::LRU<K,V>,
                     typename Hash = std::hash<K>,
                     typename Eq = std::equal_to<K>,
                     typename CacheMutex = std::shared_mutex,
-                    typename CacheType = StrategyCache<K, V, Strategy, Hash, Eq, CacheMutex>
+                    typename CacheType = Base<K, V, Strategy, Hash, Eq, CacheMutex>
         >
         requires    concepts::StrategyLike<Strategy, K, V> &&
                     concepts::MutexLike<CacheMutex> &&
@@ -84,8 +84,8 @@ namespace data {
         }
 
         private:
-            explicit MethodCacheManager() = default;
-            ~MethodCacheManager() noexcept = default;
+            explicit MethodManager() = default;
+            ~MethodManager() noexcept = default;
 
             template<typename CacheT>
             struct NoDelete {

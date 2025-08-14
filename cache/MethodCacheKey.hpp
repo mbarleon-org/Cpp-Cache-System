@@ -3,7 +3,7 @@
 #include <tuple>
 #include <functional>
 
-namespace data {
+namespace cache {
     template<typename... Args>
     struct MethodCacheKey {
         std::tuple<Args...> args;
@@ -34,9 +34,9 @@ namespace data {
 }
 
 template<typename... Args>
-struct std::hash<data::MethodCacheKey<Args...>> {
-    [[nodiscard]] std::size_t operator()(const data::MethodCacheKey<Args...>& key) const
+struct std::hash<cache::MethodCacheKey<Args...>> {
+    [[nodiscard]] std::size_t operator()(const cache::MethodCacheKey<Args...>& key) const
     {
-        return data::detail::tuple_hash_impl<std::tuple<Args...>>::apply(key.args);
+        return cache::detail::tuple_hash_impl<std::tuple<Args...>>::apply(key.args);
     }
 };

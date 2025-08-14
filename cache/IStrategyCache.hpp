@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace data {
+namespace cache {
     template<typename K, typename V>
     class IStrategyCache {
         public:

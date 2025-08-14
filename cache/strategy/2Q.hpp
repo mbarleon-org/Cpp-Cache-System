@@ -6,15 +6,15 @@
 #include <unordered_map>
 #include "ACacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
-    class TwoQCacheStrategy final: public ACacheStrategy<K, V> {
+    class TwoQueues final: public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            TwoQCacheStrategy() = default;
-            virtual ~TwoQCacheStrategy() noexcept override = default;
+            TwoQueues() = default;
+            virtual ~TwoQueues() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

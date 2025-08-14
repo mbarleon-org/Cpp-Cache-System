@@ -1,22 +1,21 @@
 #pragma once
 
 #include <memory>
+#include "Base.hpp"
 #include <stdexcept>
 #include <functional>
 #include <type_traits>
 #include <shared_mutex>
-#include "StrategyCache.hpp"
-#include "../utils/NoLock.hpp"
-#include "LRUCacheStrategy.hpp"
+#include "strategy/LRU.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/Singleton.hpp"
 #include "../utils/MutexLocks.hpp"
 
-namespace data {
+namespace cache {
 
     template<
                 typename K, typename V,
-                typename Strategy = LRUCacheStrategy<K, V>,
+                typename Strategy = strategy::LRU<K, V>,
                 typename Hash = std::hash<K>,
                 typename Eq = std::equal_to<K>,
                 typename Mutex = std::shared_mutex
@@ -25,17 +24,17 @@ namespace data {
     requires    concepts::StrategyLike<Strategy, K, V> &&
                 concepts::MutexLike<Mutex>
 
-    class SharedStrategyCache:
+    class Shared final:
         public IStrategyCache<K, V>,
-        public utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>> {
-        friend class utils::Singleton<SharedStrategyCache<K, V, Strategy, Hash, Eq, Mutex>>;
+        public utils::Singleton<Shared<K, V, Strategy, Hash, Eq, Mutex>> {
+        friend class utils::Singleton<Shared<K, V, Strategy, Hash, Eq, Mutex>>;
 
         public:
             using KeyType = K;
             using ValType = V;
             using IsSharedCache = void;
 
-            virtual ~SharedStrategyCache() noexcept override = default;
+            virtual ~Shared() noexcept override = default;
 
             [[nodiscard]] bool isCacheInitialized() const noexcept
             {
@@ -47,7 +46,7 @@ namespace data {
             {
                 MutexLocks::WriteLock<decltype(_mtx)> wlock(_mtx);
                 if (!_cache) {
-                    _cache = std::make_unique<StrategyCache<K, V, Strategy, Hash, Eq, NoLock>>(cap);
+                    _cache = std::make_unique<Base<K, V, Strategy, Hash, Eq, MutexLocks::NoLock>>(cap);
                 }
             }
 
@@ -90,16 +89,16 @@ namespace data {
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                if constexpr (std::is_same_v<Mutex, NoLock>) {
+                if constexpr (std::is_same_v<Mutex, MutexLocks::NoLock>) {
                     return false;
                 }
                 return true;
             }
 
         private:
-            explicit SharedStrategyCache() = default;
+            explicit Shared() = default;
 
             mutable Mutex _mtx;
-            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, NoLock>> _cache;
+            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, MutexLocks::NoLock>> _cache;
     };
 }

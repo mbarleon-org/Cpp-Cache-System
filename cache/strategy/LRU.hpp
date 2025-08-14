@@ -6,15 +6,15 @@
 #include <unordered_map>
 #include "ACacheStrategy.hpp"
 
-namespace data {
+namespace cache::strategy {
     template<typename K, typename V>
-    class LRUCacheStrategy final: public ACacheStrategy<K, V> {
+    class LRU final: public ACacheStrategy<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            LRUCacheStrategy() = default;
-            virtual ~LRUCacheStrategy() noexcept override = default;
+            LRU() = default;
+            virtual ~LRU() noexcept override = default;
 
             virtual void onClear() noexcept override
             {

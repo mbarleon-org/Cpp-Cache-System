@@ -5,18 +5,17 @@
 #include <functional>
 #include <shared_mutex>
 #include <unordered_map>
-#include "ICacheStrategy.hpp"
+#include "strategy/LRU.hpp"
 #include "IStrategyCache.hpp"
-#include "../utils/NoLock.hpp"
-#include "LRUCacheStrategy.hpp"
 #include "../utils/Concepts.hpp"
 #include "../utils/MutexLocks.hpp"
+#include "strategy/ICacheStrategy.hpp"
 
-namespace data {
+namespace cache {
 
     template<
                 typename K, typename V,
-                typename Strategy = LRUCacheStrategy<K, V>,
+                typename Strategy = strategy::LRU<K, V>,
                 typename Hash = std::hash<K>,
                 typename Eq = std::equal_to<K>,
                 typename Mutex = std::shared_mutex
@@ -25,12 +24,12 @@ namespace data {
     requires    concepts::StrategyLike<Strategy, K, V> &&
                 concepts::MutexLike<Mutex>
 
-    class StrategyCache final: public IStrategyCache<K, V> {
+    class Base final: public IStrategyCache<K, V> {
         public:
             using KeyType = K;
             using ValType = V;
 
-            explicit StrategyCache(std::size_t cap = 128): _capacity(cap)
+            explicit Base(std::size_t cap = 128): _capacity(cap)
             {
                 if (cap < 1) {
                     throw(std::invalid_argument("Cannot give null capacity."));
@@ -40,7 +39,7 @@ namespace data {
                 _strategy->reserve(_capacity);
             }
 
-            virtual ~StrategyCache() noexcept override = default;
+            virtual ~Base() noexcept override = default;
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) override
             {
@@ -109,7 +108,7 @@ namespace data {
 
             [[nodiscard]] virtual bool isMtSafe() const noexcept override
             {
-                if constexpr (std::is_same_v<Mutex, NoLock>) {
+                if constexpr (std::is_same_v<Mutex, MutexLocks::NoLock>) {
                     return false;
                 }
                 return true;
