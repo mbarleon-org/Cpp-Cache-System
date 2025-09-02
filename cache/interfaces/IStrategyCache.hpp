@@ -6,6 +6,9 @@ namespace cache {
     template<typename K, typename V>
     class IStrategyCache {
         public:
+            using KeyType = K;
+            using ValType = V;
+
             virtual ~IStrategyCache() noexcept = default;
 
             [[nodiscard]] virtual bool get(const K& key, V& cacheOut) = 0;

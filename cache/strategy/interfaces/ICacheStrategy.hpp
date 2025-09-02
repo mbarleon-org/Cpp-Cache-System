@@ -7,6 +7,9 @@ namespace cache::strategy {
     template<typename K, typename V>
     class ICacheStrategy: public utils::NonCopyable {
         public:
+            using KeyType = K;
+            using ValType = V;
+
             virtual ~ICacheStrategy() noexcept = default;
 
             virtual void onClear() noexcept = 0;

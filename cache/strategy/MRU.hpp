@@ -10,9 +10,6 @@ namespace cache::strategy {
     template<typename K, typename V>
     class MRU final: public ACacheStrategy<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             MRU() = default;
             virtual ~MRU() noexcept override = default;
 

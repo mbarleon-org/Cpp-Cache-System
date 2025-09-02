@@ -13,9 +13,6 @@ namespace cache::strategy {
     template<typename K, typename V>
     class RedisLFU final : public ACacheStrategy<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             explicit RedisLFU(): _rng(std::random_device{}()){}
             virtual ~RedisLFU() noexcept override = default;
 

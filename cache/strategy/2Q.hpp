@@ -10,9 +10,6 @@ namespace cache::strategy {
     template<typename K, typename V>
     class TwoQueues final: public ACacheStrategy<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             TwoQueues() = default;
             virtual ~TwoQueues() noexcept override = default;
 

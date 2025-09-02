@@ -29,8 +29,6 @@ namespace cache {
 
     class Fragmented final: public IStrategyCache<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
             using IsFragmentedCache = void;
 
             explicit Fragmented(std::size_t fragments = 4, std::size_t cap = 128):

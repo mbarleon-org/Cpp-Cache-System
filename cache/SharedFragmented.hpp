@@ -49,8 +49,6 @@ namespace cache {
         >;
 
     public:
-        using KeyType  = K;
-        using ValType  = V;
         using IsSharedCache = void;
         using IsFragmentedCache = void;
 

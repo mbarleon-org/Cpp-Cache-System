@@ -30,8 +30,6 @@ namespace cache {
         friend class utils::Singleton<Shared<K, V, Strategy, Hash, Eq, Mutex>>;
 
         public:
-            using KeyType = K;
-            using ValType = V;
             using IsSharedCache = void;
 
             virtual ~Shared() noexcept override = default;

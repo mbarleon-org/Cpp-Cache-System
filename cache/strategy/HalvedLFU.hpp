@@ -11,9 +11,6 @@ namespace cache::strategy {
     template<typename K, typename V>
     class HalvedLFU final: public ACacheStrategy<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             HalvedLFU() = default;
             virtual ~HalvedLFU() noexcept override = default;
 

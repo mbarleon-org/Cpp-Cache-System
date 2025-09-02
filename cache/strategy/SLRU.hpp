@@ -10,9 +10,6 @@ namespace cache::strategy {
     template<typename K, typename V>
     class SLRU final : public ACacheStrategy<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             SLRU() = default;
             ~SLRU() noexcept override = default;
 

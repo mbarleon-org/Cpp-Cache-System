@@ -10,9 +10,6 @@ namespace cache::strategy {
     template<typename K, typename V>
     class FIFO final: public ACacheStrategy<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             FIFO() = default;
             virtual ~FIFO() noexcept override = default;
 

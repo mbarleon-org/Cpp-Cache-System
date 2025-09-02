@@ -26,9 +26,6 @@ namespace cache {
 
     class Base final: public IStrategyCache<K, V> {
         public:
-            using KeyType = K;
-            using ValType = V;
-
             explicit Base(std::size_t cap = 128): _capacity(cap)
             {
                 if (cap < 1) {
