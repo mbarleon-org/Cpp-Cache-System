@@ -1,4 +1,7 @@
 /.github/ @mbarleon-org/maintainers
 /LICENSE @mbarleon-org/maintainers
+/jenkins-build.sh @mbarleon-org/maintainers
+/build.sh @mbarleon-org/maintainers
+/build.ps1 @mbarleon-org/maintainers
 /.github/CODEOWNERS @mbarleon
 
