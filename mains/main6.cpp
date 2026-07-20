@@ -1,8 +1,8 @@
 // main.cpp
 #include <iostream>
-#include "cache/Base.hpp"
-#include "cache/helpers/MutexLocks.hpp"
-#include "cache/strategy/LFU.hpp"
+#include <Cache/Base.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Strategy/LFU.hpp>
 
 template <typename T>
 static void check_eq(const char* name, const T& got, const T& expected) {

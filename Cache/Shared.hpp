@@ -65,6 +65,14 @@ namespace cache {
                 }
             }
 
+            virtual void remove(const K& key) override
+            {
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                if (_cache) {
+                    _cache->remove(key);
+                }
+            }
+
             virtual void clear() noexcept override
             {
                 mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
@@ -97,6 +105,6 @@ namespace cache {
             explicit Shared() = default;
 
             mutable Mutex _mtx;
-            std::unique_ptr<StrategyCache<K, V, Strategy, Hash, Eq, mutex_locks::NoLock>> _cache;
+            std::unique_ptr<Base<K, V, Strategy, Hash, Eq, mutex_locks::NoLock>> _cache;
     };
 }

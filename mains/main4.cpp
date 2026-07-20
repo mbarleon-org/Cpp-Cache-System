@@ -7,8 +7,8 @@
 #include <random>
 #include <mutex>
 #include <shared_mutex>
-#include "cache/strategy/LRU.hpp"
-#include "cache/SharedFragmented.hpp"
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/SharedFragmented.hpp>
 
 // Shared check helpers
 template <typename T>
@@ -49,6 +49,8 @@ int main() {
 
     // --------- basic single-thread checks ----------
     check_false("isCacheInitialized()", cache.isCacheInitialized());
+    cache.remove(42);
+    check_eq("remove before initialization is a no-op", cache.size(), std::size_t(0));
     cache.initialize(/*fragments*/4, /*capacity*/64); // 16 per fragment
     check_eq("capacity()", cache.capacity(), std::size_t(64));
     check_true("isCacheInitialized()", cache.isCacheInitialized());
@@ -65,6 +67,18 @@ int main() {
     check_eq("value for key 3", out, 400);
 
     check_eq("size() after two inserts", cache.size(), std::size_t(2));
+
+    cache.remove(0);
+    check_false("removed key 0 is absent", cache.get(0, out));
+    check_true("removing key 0 keeps key 3", cache.get(3, out));
+    check_eq("size() decreases after remove", cache.size(), std::size_t(1));
+
+    cache.remove(0);
+    check_eq("removing key 0 again is a no-op", cache.size(), std::size_t(1));
+
+    cache.put(0, 100);
+    check_true("removed key 0 can be reinserted", cache.get(0, out));
+    check_eq("reinserted value for key 0", out, 100);
 
     // --------- Concurrency A: threads on disjoint fragments ----------
     {

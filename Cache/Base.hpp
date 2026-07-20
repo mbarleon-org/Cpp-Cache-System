@@ -85,6 +85,15 @@ namespace cache {
                 }
             }
 
+            virtual void remove(const K& key) override
+            {
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                _map.erase(key);
+                if (!_strategy->onRemove(key)) {
+                    clear();
+                }
+            }
+
             virtual void clear() noexcept override
             {
                 mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);

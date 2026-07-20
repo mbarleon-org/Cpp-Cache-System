@@ -2,13 +2,13 @@
 #include <string>
 #include <iostream>
 #include <type_traits>
-#include "cache/helpers/MutexLocks.hpp"
-#include "cache/Base.hpp"
-#include "cache/strategy/2Q.hpp"
-#include "cache/strategy/LRU.hpp"
-#include "cache/strategy/MRU.hpp"
-#include "cache/strategy/SLRU.hpp"
-#include "cache/strategy/FIFO.hpp"
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Base.hpp>
+#include <Cache/Strategy/2Q.hpp>
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/Strategy/MRU.hpp>
+#include <Cache/Strategy/SLRU.hpp>
+#include <Cache/Strategy/FIFO.hpp>
 
 template <typename T>
 static void check_eq(const char* name, const T& got, const T& expected) {

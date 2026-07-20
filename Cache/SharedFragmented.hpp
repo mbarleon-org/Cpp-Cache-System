@@ -90,6 +90,15 @@ namespace cache {
             f->put(key, val);
         }
 
+        void remove(const K& key) override {
+            FragmentedType *f = nullptr;
+            {
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
+                f = _cache.get();
+            }
+            if (f) f->remove(key);
+        }
+
         void clear() noexcept override {
             FragmentedType *f = nullptr;
             {

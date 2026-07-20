@@ -2,9 +2,9 @@
 #include <iostream>
 #include <string>
 
-#include "cache/Base.hpp"
-#include "cache/helpers/MutexLocks.hpp"
-#include "cache/strategy/LRU.hpp"
+#include <Cache/Base.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Strategy/LRU.hpp>
 
 template <typename T>
 static void check_eq(const char* name, const T& got, const T& expected) {
@@ -91,6 +91,37 @@ static void test_update_existing() {
     check_eq("size() remains constant", cache.size(), std::size_t(3));
 }
 
+static void test_remove() {
+    std::cout << "\n=== LRU: remove() ===\n";
+    IntStringCache cache(3);
+
+    cache.put(1, "one");
+    cache.put(2, "two");
+    cache.put(3, "three");
+
+    std::string value{};
+    (void)cache.get(1, value); // order: 2 oldest -> 3 -> 1 newest
+
+    cache.remove(2);
+    check_eq("size() decreases after remove", cache.size(), std::size_t(2));
+    check_false("removed key is absent", cache.get(2, value));
+    check_true("remove keeps key 1", cache.get(1, value));
+    check_true("remove keeps key 3", cache.get(3, value));
+
+    cache.remove(99);
+    check_eq("removing a missing key is a no-op", cache.size(), std::size_t(2));
+
+    // Refill and overflow the cache to verify remove() also updates the
+    // strategy's eviction bookkeeping.
+    cache.put(4, "four");
+    cache.put(5, "five");
+    check_eq("size() remains at capacity after refill", cache.size(), std::size_t(3));
+    check_false("oldest remaining key is evicted", cache.get(1, value));
+    check_true("key 3 remains after refill", cache.get(3, value));
+    check_true("key 4 remains after refill", cache.get(4, value));
+    check_true("new key is inserted after refill", cache.get(5, value));
+}
+
 static void test_clear() {
     std::cout << "\n=== LRU: clear() ===\n";
     IntStringCache cache(3);
@@ -171,6 +202,7 @@ int main() {
         test_basic_operations();
         test_lru_eviction();
         test_update_existing();
+        test_remove();
         test_clear();
         test_string_keys();
         test_complex_lru_behavior();

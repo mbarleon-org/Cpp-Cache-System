@@ -81,6 +81,22 @@ namespace cache {
                 fragmentPtr->put(key, value);
             }
 
+            virtual void remove(const K& key) override
+            {
+                auto idx = getCacheIndex(key);
+                std::unique_ptr<Fragment>& slot = getFragmentSlot(idx);
+                Fragment *local = nullptr;
+
+                {
+                    mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                    if (!slot) {
+                        return;
+                    }
+                    local = slot.get();
+                }
+                local->remove(key);
+            }
+
             virtual void clear() noexcept override
             {
                 mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);

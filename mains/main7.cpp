@@ -1,8 +1,8 @@
 // main.cpp
 #include <iostream>
-#include "cache/Base.hpp"
-#include "cache/helpers/MutexLocks.hpp"         // adjust path
-#include "cache/strategy/HalvedLFU.hpp"  // your LFU-with-halving strategy
+#include <Cache/Base.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>         // adjust path
+#include <Cache/Strategy/HalvedLFU.hpp>  // your LFU-with-halving strategy
 
 template <typename T>
 static void check_eq(const char* name, const T& got, const T& expected) {

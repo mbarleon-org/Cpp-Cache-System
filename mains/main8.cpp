@@ -3,10 +3,9 @@
 #include <string>
 #include <thread>
 #include <chrono>
-
-#include "cache/Base.hpp"
-#include "cache/helpers/MutexLocks.hpp"        // adjust path if needed
-#include "cache/strategy/RedisLFU.hpp"  // the strategy provided earlier
+#include <Cache/Base.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>        // adjust path if needed
+#include <Cache/Strategy/RedisLFU.hpp>  // the strategy provided earlier
 
 template <typename T>
 static void check_eq(const char* name, const T& got, const T& expected) {

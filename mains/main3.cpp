@@ -7,7 +7,7 @@
 #include <chrono>
 #include <mutex>
 #include <shared_mutex>
-#include "cache/Fragmented.hpp"
+#include <Cache/Fragmented.hpp>
 
 // Shared check helpers
 template <typename T>
@@ -50,6 +50,8 @@ int main() {
         bool hit = cache.get(42, out);
         check_false("miss on empty get(42)", hit);
     }
+    cache.remove(42);
+    check_eq("remove from an unused shard is a no-op", cache.size(), std::size_t(0));
 
     // --- Put + Get, across shards ---
     // shard index = key % fragments (since std::hash<int> is identity-ish)
@@ -69,6 +71,22 @@ int main() {
         bool hit = cache.get(3, out);
         check_true("get(3) after put", hit);
         check_eq("value for key 3", out, 400);
+    }
+
+    // --- Remove, including strategy bookkeeping inside a fragment ---
+    {
+        V out{};
+        cache.remove(0);
+        check_false("removed key 0 is absent", cache.get(0, out));
+        check_true("removing key 0 keeps key 3", cache.get(3, out));
+        check_eq("size() decreases after remove", cache.size(), std::size_t(3));
+
+        cache.remove(0);
+        check_eq("removing key 0 again is a no-op", cache.size(), std::size_t(3));
+
+        cache.put(0, 100);
+        check_true("removed key 0 can be reinserted", cache.get(0, out));
+        check_eq("reinserted value for key 0", out, 100);
     }
 
     // --- Per-fragment LRU eviction check ---
