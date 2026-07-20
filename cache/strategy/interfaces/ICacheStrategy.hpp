@@ -1,7 +1,7 @@
 #pragma once
 
 #include <optional>
-#include "../../utils/NonCopyable.hpp"
+#include <Cache/Utils/NonCopyable.hpp>
 
 namespace cache::strategy {
     template<typename K, typename V>

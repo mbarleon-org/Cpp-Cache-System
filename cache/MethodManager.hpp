@@ -2,16 +2,16 @@
 
 #include <string>
 #include <memory>
-#include "Base.hpp"
 #include <typeinfo>
 #include <typeindex>
 #include <shared_mutex>
 #include <unordered_map>
-#include "strategy/LRU.hpp"
-#include "utils/Singleton.hpp"
-#include "helpers/MutexLocks.hpp"
-#include "concepts/CacheConcepts.hpp"
-#include "interfaces/IStrategyCache.hpp"
+#include <Cache/Base.hpp>
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/Utils/Singleton.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Concepts/CacheConcepts.hpp>
+#include <Cache/Interfaces/IStrategyCache.hpp>
 
 struct CacheKey {
     std::string cls;

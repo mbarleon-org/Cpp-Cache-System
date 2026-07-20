@@ -5,11 +5,11 @@
 #include <functional>
 #include <shared_mutex>
 #include <unordered_map>
-#include "strategy/LRU.hpp"
-#include "helpers/MutexLocks.hpp"
-#include "concepts/CacheConcepts.hpp"
-#include "interfaces/IStrategyCache.hpp"
-#include "strategy/interfaces/ICacheStrategy.hpp"
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Concepts/CacheConcepts.hpp>
+#include <Cache/Interfaces/IStrategyCache.hpp>
+#include <Cache/Strategy/Interfaces/ICacheStrategy.hpp>
 
 namespace cache {
 

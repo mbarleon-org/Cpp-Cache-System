@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include "ICacheStrategy.hpp"
+#include <Cache/Strategy/Interfaces/ICacheStrategy.hpp>
 
 namespace cache::strategy {
     template<typename K, typename V>

@@ -2,7 +2,7 @@
 
 #include <mutex>
 #include <shared_mutex>
-#include "../concepts/MutexConcepts.hpp"
+#include <Cache/Concepts/MutexConcepts.hpp>
 
 namespace cache::mutex_locks {
     template<typename M>

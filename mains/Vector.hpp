@@ -1,9 +1,9 @@
 #pragma once
 
-#include "cache/strategy/LRU.hpp"
-#include "cache/MethodManager.hpp"
-#include "cache/MethodCacheKey.hpp"
-#include "cache/SharedFragmented.hpp"
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/MethodManager.hpp>
+#include <Cache/MethodCacheKey.hpp>
+#include <Cache/SharedFragmented.hpp>
 #include <iostream>
 #include <chrono>
 #include <thread>

@@ -3,12 +3,12 @@
 #include <memory>
 #include <type_traits>
 #include <shared_mutex>
-#include "Fragmented.hpp"
-#include "strategy/LRU.hpp"
-#include "utils/Singleton.hpp"
-#include "helpers/MutexLocks.hpp"
-#include "concepts/CacheConcepts.hpp"
-#include "interfaces/IStrategyCache.hpp"
+#include <Cache/Fragmented.hpp>
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/Utils/Singleton.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Concepts/CacheConcepts.hpp>
+#include <Cache/Interfaces/IStrategyCache.hpp>
 
 namespace cache {
 

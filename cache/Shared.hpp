@@ -1,15 +1,15 @@
 #pragma once
 
 #include <memory>
-#include "Base.hpp"
 #include <stdexcept>
 #include <functional>
 #include <type_traits>
 #include <shared_mutex>
-#include "strategy/LRU.hpp"
-#include "utils/Singleton.hpp"
-#include "helpers/MutexLocks.hpp"
-#include "concepts/CacheConcepts.hpp"
+#include <Cache/Base.hpp>
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/Utils/Singleton.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Concepts/CacheConcepts.hpp>
 
 namespace cache {
 

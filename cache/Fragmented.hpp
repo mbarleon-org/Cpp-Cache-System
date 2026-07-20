@@ -2,15 +2,15 @@
 
 #include <vector>
 #include <cstddef>
-#include "Base.hpp"
 #include <stdexcept>
 #include <algorithm>
 #include <functional>
 #include <shared_mutex>
-#include "strategy/LRU.hpp"
-#include "helpers/MutexLocks.hpp"
-#include "concepts/CacheConcepts.hpp"
-#include "interfaces/IStrategyCache.hpp"
+#include <Cache/Base.hpp>
+#include <Cache/Strategy/LRU.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Concepts/CacheConcepts.hpp>
+#include <Cache/Interfaces/IStrategyCache.hpp>
 
 namespace cache {
 
