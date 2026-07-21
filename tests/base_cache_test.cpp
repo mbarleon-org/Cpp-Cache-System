@@ -164,7 +164,7 @@ static void test_invalidate_if()
     std::string value{};
     check_true("nonmatching entry remains available", cache.get(2, value));
     check_eq("nonmatching entry keeps its value", value, std::string("fresh"));
-    check_false("matching entry is returned as a miss", cache.get(1, value));
+    check_false("contains reports an invalidated entry as absent", cache.contains(1));
     check_eq("matching entry is removed", cache.size(), std::size_t(1));
     check_false("invalidated entry remains absent", cache.get(1, value));
     check_eq("callback runs only for entries found in the cache", callback_calls, 2);
@@ -212,6 +212,18 @@ static void test_contains()
     accessed_cache.put(3, "three");
     check_true("counted contains keeps the accessed key", accessed_cache.get(1, value));
     check_false("counted contains makes the other key the eviction candidate", accessed_cache.get(2, value));
+
+    IntStringCache invalidating_cache(2);
+    int            predicate_calls = 0;
+    invalidating_cache.put(1, "stale");
+    invalidating_cache.invalidateIf([&predicate_calls](const int&, const std::string& current) {
+        ++predicate_calls;
+        return current == "stale";
+    });
+    check_false("contains evaluates the invalidation predicate", invalidating_cache.contains(1));
+    check_eq("contains removes an invalidated entry", invalidating_cache.size(), std::size_t(0));
+    check_false("contains misses an entry after invalidating it", invalidating_cache.contains(1));
+    check_eq("contains does not invoke the predicate for an absent key", predicate_calls, 1);
 }
 
 static void test_conditional_puts()

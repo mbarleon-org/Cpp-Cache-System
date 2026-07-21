@@ -142,19 +142,13 @@ namespace cache
 
         [[nodiscard]] bool checkContains(const K& key, bool countAsAccess) override
         {
-            if (!countAsAccess)
-            {
-                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
-                return _map.find(key) != _map.end();
-            }
-
             mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
             auto                                   it = _map.find(key);
             if (it == _map.end())
             {
                 return false;
             }
-            if (!_strategy->onAccess(key))
+            if (countAsAccess && !_strategy->onAccess(key))
             {
                 clearUnlocked();
                 return false;

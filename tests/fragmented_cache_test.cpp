@@ -85,8 +85,8 @@ int main()
         cache.put(4, 140);  // nonmatching entry in the existing shard 0
 
         V out{};
-        check_false("invalidateIf removes a match from an existing shard", cache.get(0, out));
-        check_false("invalidateIf applies to a subsequently created shard", cache.get(1, out));
+        check_false("contains invalidates a match from an existing shard", cache.contains(0));
+        check_false("contains invalidates a match from a subsequently created shard", cache.contains(1));
         check_true("invalidateIf preserves a nonmatching entry", cache.get(4, out));
         check_eq("invalidateIf leaves only the nonmatching entry", cache.size(), std::size_t(1));
         check_eq("callback receives each cached key/value pair read", callback_calls, 3);

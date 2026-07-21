@@ -49,7 +49,7 @@ int main()
     check_true("shared cache reports the predicate after initialization", cache.hasInvalidationPredicate());
     cache.put(42, -42);
     int out{};
-    check_false("pre-initialize invalidateIf callback invalidates a later entry", cache.get(42, out));
+    check_false("contains invokes the pre-initialize invalidation predicate", cache.contains(42));
     check_eq("invalidated shared entry is removed", cache.size(), std::size_t(0));
     check_eq("callback receives the matching key/value pair", invalidate_callback_calls, 1);
 

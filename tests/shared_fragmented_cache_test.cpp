@@ -77,7 +77,7 @@ int main()
     check_false("miss on empty get(42)", cache.get(42, out));
 
     cache.put(42, -42); // its fragment is created after callback registration
-    check_false("pre-initialize invalidateIf callback invalidates a later entry", cache.get(42, out));
+    check_false("contains invokes the pre-initialize invalidation predicate", cache.contains(42));
     check_eq("invalidated shared-fragmented entry is removed", cache.size(), std::size_t(0));
     check_eq("callback receives the matching key/value pair", invalidate_callback_calls, 1);
 
