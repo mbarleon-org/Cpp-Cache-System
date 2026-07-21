@@ -3,7 +3,7 @@
 #include <Cache/Concepts/CacheConcepts.hpp>
 #include <Cache/Fragmented.hpp>
 #include <Cache/Helpers/MutexLocks.hpp>
-#include <Cache/Interfaces/IStrategyCache.hpp>
+#include <Cache/Interfaces/AStrategyCache.hpp>
 #include <Cache/Strategy/LRU.hpp>
 #include <Cache/Utils/Singleton.hpp>
 #include <memory>
@@ -18,7 +18,7 @@ namespace cache
 
         requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<WrapperMutex> && concepts::MutexLike<FragMutex> && concepts::MutexLike<FragmentMutex>
 
-    class SharedFragmented final : public IStrategyCache<K, V>, public utils::Singleton<SharedFragmented<K, V, Strategy, Hash, Eq, WrapperMutex, FragMutex, FragmentMutex>>
+    class SharedFragmented final : public AStrategyCache<K, V>, public utils::Singleton<SharedFragmented<K, V, Strategy, Hash, Eq, WrapperMutex, FragMutex, FragmentMutex>>
     {
 
         using FragmentedType = Fragmented<K, V, Strategy, Hash, Eq, FragMutex, FragmentMutex>;
@@ -150,6 +150,41 @@ namespace cache
                 return false;
             }
             return true;
+        }
+
+      protected:
+        using PutRequirement = typename AStrategyCache<K, V>::PutRequirement;
+
+        [[nodiscard]] bool putConditional(const K& key, const V& value, PutRequirement req) override
+        {
+            FragmentedType* cache = nullptr;
+            {
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
+                if (!_cache)
+                {
+                    return false;
+                }
+                cache = _cache.get();
+            }
+            if (req == PutRequirement::ABSENT)
+            {
+                return cache->putIfAbsent(key, value);
+            }
+            return cache->putIfPresent(key, value);
+        }
+
+        [[nodiscard]] bool checkContains(const K& key, bool countAsAccess) override
+        {
+            FragmentedType* cache = nullptr;
+            {
+                mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
+                if (!_cache)
+                {
+                    return false;
+                }
+                cache = _cache.get();
+            }
+            return cache->contains(key, countAsAccess);
         }
 
       private:

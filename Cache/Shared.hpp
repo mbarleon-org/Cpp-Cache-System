@@ -3,6 +3,7 @@
 #include <Cache/Base.hpp>
 #include <Cache/Concepts/CacheConcepts.hpp>
 #include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Interfaces/AStrategyCache.hpp>
 #include <Cache/Strategy/LRU.hpp>
 #include <Cache/Utils/Singleton.hpp>
 #include <functional>
@@ -19,7 +20,7 @@ namespace cache
 
         requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex>
 
-    class Shared final : public IStrategyCache<K, V>, public utils::Singleton<Shared<K, V, Strategy, Hash, Eq, Mutex>>
+    class Shared final : public AStrategyCache<K, V>, public utils::Singleton<Shared<K, V, Strategy, Hash, Eq, Mutex>>
     {
         friend class utils::Singleton<Shared<K, V, Strategy, Hash, Eq, Mutex>>;
 
@@ -126,6 +127,35 @@ namespace cache
                 return false;
             }
             return true;
+        }
+
+      protected:
+        using PutRequirement = typename AStrategyCache<K, V>::PutRequirement;
+
+        [[nodiscard]] bool putConditional(const K& key, const V& value, PutRequirement req) override
+        {
+            mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
+            if (!_cache)
+            {
+                return false;
+            }
+            if (req == PutRequirement::ABSENT)
+            {
+                return _cache->putIfAbsent(key, value);
+            }
+            return _cache->putIfPresent(key, value);
+        }
+
+        [[nodiscard]] bool checkContains(const K& key, bool countAsAccess) override
+        {
+            if (!countAsAccess)
+            {
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                return _cache && _cache->contains(key);
+            }
+
+            mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
+            return _cache && _cache->contains(key, true);
         }
 
       private:

@@ -3,7 +3,7 @@
 #include <Cache/Base.hpp>
 #include <Cache/Concepts/CacheConcepts.hpp>
 #include <Cache/Helpers/MutexLocks.hpp>
-#include <Cache/Interfaces/IStrategyCache.hpp>
+#include <Cache/Interfaces/AStrategyCache.hpp>
 #include <Cache/Strategy/LRU.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -20,7 +20,7 @@ namespace cache
 
         requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<Mutex> && concepts::MutexLike<InnerMutex>
 
-    class Fragmented final : public IStrategyCache<K, V>
+    class Fragmented final : public AStrategyCache<K, V>
     {
       public:
         using IsFragmentedCache = void;
@@ -190,9 +190,63 @@ namespace cache
             return true;
         }
 
-      private:
-        using Fragment = Base<K, V, Strategy, Hash, Eq, InnerMutex>;
+      protected:
+        using PutRequirement = typename AStrategyCache<K, V>::PutRequirement;
+        using Fragment       = Base<K, V, Strategy, Hash, Eq, InnerMutex>;
 
+        [[nodiscard]] bool putConditional(const K& key, const V& value, PutRequirement req) override
+        {
+            Fragment*  fragment = nullptr;
+            const auto idx      = getCacheIndex(key);
+
+            if (req == PutRequirement::ABSENT)
+            {
+                mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
+                auto&                                  slot = _caches[idx];
+                if (!slot)
+                {
+                    slot = std::make_unique<Fragment>(_capacity_per_fragment);
+                    if (_invalidateCallback)
+                    {
+                        slot->invalidateIf(_invalidateCallback);
+                    }
+                }
+                fragment = slot.get();
+            }
+            else
+            {
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                const auto&                           slot = _caches[idx];
+                if (!slot)
+                {
+                    return false;
+                }
+                fragment = slot.get();
+            }
+
+            if (req == PutRequirement::ABSENT)
+            {
+                return fragment->putIfAbsent(key, value);
+            }
+            return fragment->putIfPresent(key, value);
+        }
+
+        [[nodiscard]] bool checkContains(const K& key, bool countAsAccess) override
+        {
+            Fragment* fragment = nullptr;
+            {
+                mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
+                const auto&                           slot = _caches[getCacheIndex(key)];
+                if (!slot)
+                {
+                    return false;
+                }
+                fragment = slot.get();
+            }
+            return fragment->contains(key, countAsAccess);
+        }
+
+      private:
         mutable Mutex                           _mtx;
         const std::size_t                       _nfragments;
         const std::size_t                       _capacity;

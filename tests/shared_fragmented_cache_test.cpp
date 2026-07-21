@@ -64,6 +64,8 @@ int main()
     });
     cache.remove(42);
     check_eq("remove before initialization is a no-op", cache.size(), std::size_t(0));
+    check_false("putIfAbsent before initialization is a no-op", cache.putIfAbsent(7, 70));
+    check_false("contains before initialization misses", cache.contains(7));
     cache.initialize(/*fragments*/ 4, /*capacity*/ 64); // 16 per fragment
     check_eq("capacity()", cache.capacity(), std::size_t(64));
     check_true("isCacheInitialized()", cache.isCacheInitialized());
@@ -81,6 +83,14 @@ int main()
     check_true("entry remains available after clearing the shared-fragmented predicate", cache.get(42, out));
     check_eq("cleared shared-fragmented predicate is not invoked", invalidate_callback_calls, 1);
     cache.remove(42);
+
+    check_true("shared-fragmented putIfAbsent inserts a missing key", cache.putIfAbsent(7, 70));
+    check_false("shared-fragmented putIfAbsent rejects an existing key", cache.putIfAbsent(7, 71));
+    check_true("shared-fragmented contains finds the inserted key", cache.contains(7));
+    check_true("shared-fragmented putIfPresent updates an existing key", cache.putIfPresent(7, 72));
+    check_true("shared-fragmented conditional value is readable", cache.get(7, out));
+    check_eq("shared-fragmented putIfPresent stores the new value", out, 72);
+    cache.remove(7);
 
     cache.put(0, 100);
     check_true("hit get(0) after put", cache.get(0, out));

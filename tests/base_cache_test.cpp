@@ -2,8 +2,12 @@
 #include <Cache/Base.hpp>
 #include <Cache/Helpers/MutexLocks.hpp>
 #include <Cache/Strategy/LRU.hpp>
+#include <atomic>
 #include <iostream>
+#include <shared_mutex>
 #include <string>
+#include <thread>
+#include <vector>
 
 template <typename T>
 static void check_eq(const char* name, const T& got, const T& expected)
@@ -183,6 +187,91 @@ static void test_clear_invalidation_predicate()
     check_eq("cleared predicate is not invoked", callback_calls, 0);
 }
 
+static void test_contains()
+{
+    std::cout << "\n=== LRU: contains() ===\n";
+
+    IntStringCache cache(2);
+    cache.put(1, "one");
+    cache.put(2, "two");
+    check_true("contains finds an existing key", cache.contains(1));
+    check_false("contains misses an absent key", cache.contains(3));
+    cache.put(3, "three");
+
+    std::string value{};
+    check_false("contains does not count as an access by default", cache.get(1, value));
+
+    IntStringCache accessed_cache(2);
+    accessed_cache.put(1, "one");
+    accessed_cache.put(2, "two");
+    check_true("contains can count as an access", accessed_cache.contains(1, true));
+    accessed_cache.put(3, "three");
+    check_true("counted contains keeps the accessed key", accessed_cache.get(1, value));
+    check_false("counted contains makes the other key the eviction candidate", accessed_cache.get(2, value));
+}
+
+static void test_conditional_puts()
+{
+    std::cout << "\n=== LRU: conditional puts ===\n";
+
+    IntStringCache cache(3);
+    check_true("putIfAbsent inserts a missing key", cache.putIfAbsent(1, "one"));
+    check_false("putIfAbsent rejects an existing key", cache.putIfAbsent(1, "replacement"));
+
+    std::string value{};
+    check_true("conditionally inserted key is present", cache.get(1, value));
+    check_eq("rejected putIfAbsent preserves the value", value, std::string("one"));
+    check_false("putIfPresent rejects a missing key", cache.putIfPresent(2, "two"));
+    check_true("putIfPresent updates an existing key", cache.putIfPresent(1, "updated"));
+    check_true("conditionally updated key is present", cache.get(1, value));
+    check_eq("putIfPresent stores the new value", value, std::string("updated"));
+
+    IntStringCache invalidating_cache(3);
+    invalidating_cache.invalidateIf([](const int&, const std::string& current) { return current == "stale"; });
+    invalidating_cache.put(1, "stale");
+    check_true("putIfAbsent replaces an invalidated entry", invalidating_cache.putIfAbsent(1, "fresh"));
+    check_true("replacement for invalidated entry is present", invalidating_cache.get(1, value));
+    check_eq("replacement for invalidated entry stores the new value", value, std::string("fresh"));
+
+    invalidating_cache.put(2, "stale");
+    check_false("putIfPresent rejects an invalidated entry", invalidating_cache.putIfPresent(2, "updated"));
+    check_false("rejected invalidated entry is removed", invalidating_cache.contains(2));
+}
+
+static void test_concurrent_put_if_absent()
+{
+    std::cout << "\n=== LRU: concurrent putIfAbsent() ===\n";
+    using ThreadSafeCache = cache::Base<int, int, cache::strategy::LRU<int, int>, std::hash<int>, std::equal_to<int>, std::shared_mutex>;
+
+    ThreadSafeCache          cache(4);
+    std::atomic<bool>        start{false};
+    std::atomic<int>         successful_inserts{0};
+    std::vector<std::thread> threads;
+
+    for (int i = 0; i < 16; ++i)
+    {
+        threads.emplace_back([&cache, &start, &successful_inserts, i] {
+            while (!start.load(std::memory_order_acquire))
+            {
+            }
+            if (cache.putIfAbsent(42, i))
+            {
+                successful_inserts.fetch_add(1, std::memory_order_relaxed);
+            }
+        });
+    }
+
+    start.store(true, std::memory_order_release);
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    check_eq("exactly one concurrent putIfAbsent succeeds", successful_inserts.load(), 1);
+    check_eq("concurrent putIfAbsent stores one entry", cache.size(), std::size_t(1));
+    check_true("concurrently inserted key is present", cache.contains(42));
+}
+
 static void test_string_keys()
 {
     std::cout << "\n=== LRU: string keys ===\n";
@@ -254,6 +343,9 @@ int main()
         test_clear();
         test_invalidate_if();
         test_clear_invalidation_predicate();
+        test_contains();
+        test_conditional_puts();
+        test_concurrent_put_if_absent();
         test_string_keys();
         test_complex_lru_behavior();
         test_zero_capacity_behavior();

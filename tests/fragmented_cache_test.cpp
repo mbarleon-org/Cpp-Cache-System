@@ -60,6 +60,17 @@ int main()
     cache.remove(42);
     check_eq("remove from an unused shard is a no-op", cache.size(), std::size_t(0));
 
+    check_true("fragmented putIfAbsent inserts into a lazy shard", cache.putIfAbsent(42, 420));
+    check_false("fragmented putIfAbsent rejects an existing key", cache.putIfAbsent(42, 421));
+    check_true("fragmented contains finds the inserted key", cache.contains(42));
+    check_true("fragmented putIfPresent updates an existing key", cache.putIfPresent(42, 422));
+    {
+        V out{};
+        check_true("fragmented conditional value is readable", cache.get(42, out));
+        check_eq("fragmented putIfPresent stores the new value", out, 422);
+    }
+    cache.remove(42);
+
     // --- Callback invalidation, including a fragment created after registration ---
     {
         int callback_calls = 0;

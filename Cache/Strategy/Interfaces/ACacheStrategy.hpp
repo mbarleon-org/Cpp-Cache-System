@@ -2,6 +2,7 @@
 
 #include <Cache/Strategy/Interfaces/ICacheStrategy.hpp>
 #include <cstddef>
+#include <stdexcept>
 
 namespace cache::strategy
 {
