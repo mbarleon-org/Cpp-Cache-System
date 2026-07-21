@@ -1,35 +1,43 @@
-// main.cpp
-#include <iostream>
+// LFU cache behavior tests.
 #include <Cache/Base.hpp>
 #include <Cache/Helpers/MutexLocks.hpp>
 #include <Cache/Strategy/LFU.hpp>
+#include <iostream>
 
 template <typename T>
-static void check_eq(const char* name, const T& got, const T& expected) {
-    if (got == expected) {
+static void check_eq(const char* name, const T& got, const T& expected)
+{
+    if (got == expected)
+    {
         std::cout << "[OK]   " << name << " | got=" << got << " expected=" << expected << "\n";
-    } else {
+    }
+    else
+    {
         std::cout << "[FAIL] " << name << " | got=" << got << " expected=" << expected << "\n";
     }
 }
-static void check_true(const char* name, bool cond) {
+
+static void check_true(const char* name, bool cond)
+{
     std::cout << (cond ? "[OK]   " : "[FAIL] ") << name << " | expected true\n";
 }
-static void check_false(const char* name, bool cond) {
+
+static void check_false(const char* name, bool cond)
+{
     std::cout << (!cond ? "[OK]   " : "[FAIL] ") << name << " | expected false\n";
 }
 
-int main() {
+int main()
+{
     using K = int;
     using V = int;
 
     // Use NoLock for single-threaded test clarity
     using Cache = cache::Base<
         K, V,
-        cache::strategy::LFU<K,V>,
+        cache::strategy::LFU<K, V>,
         std::hash<K>, std::equal_to<K>,
-        cache::mutex_locks::NoLock
-    >;
+        cache::mutex_locks::NoLock>;
 
     // ---------------- Test 1: Evict lowest frequency ----------------
     {
@@ -44,17 +52,17 @@ int main() {
 
         // Bump frequencies: 1 -> 3, 2 -> 2, 3 -> 1
         int out{};
-        (void)cache.get(1, out); // 1:2
-        (void)cache.get(1, out); // 1:3
-        (void)cache.get(2, out); // 2:2
+        (void) cache.get(1, out); // 1:2
+        (void) cache.get(1, out); // 1:3
+        (void) cache.get(2, out); // 2:2
 
         // Insert 4; min freq is 1 => evict key 3
         cache.put(4, 400);
 
         check_false("get(3) after insert(4): key 3 should be evicted (min freq)", cache.get(3, out));
-        check_true ("get(1) survives (freq=3)", cache.get(1, out));
-        check_true ("get(2) survives (freq=2)", cache.get(2, out));
-        check_true ("get(4) present (freq=1)", cache.get(4, out));
+        check_true("get(1) survives (freq=3)", cache.get(1, out));
+        check_true("get(2) survives (freq=2)", cache.get(2, out));
+        check_true("get(4) present (freq=1)", cache.get(4, out));
     }
 
     // --------------- Test 2: Tie-break by LRU within min freq ---------------
@@ -74,9 +82,9 @@ int main() {
 
         int out{};
         check_false("tie-break: key 1 should be evicted (LRU within freq=1)", cache.get(1, out));
-        check_true ("tie-break: key 2 should remain", cache.get(2, out));
-        check_true ("tie-break: key 3 should remain", cache.get(3, out));
-        check_true ("tie-break: key 4 present", cache.get(4, out));
+        check_true("tie-break: key 2 should remain", cache.get(2, out));
+        check_true("tie-break: key 3 should remain", cache.get(3, out));
+        check_true("tie-break: key 4 present", cache.get(4, out));
     }
 
     // --------------- Test 3: Update value without affecting frequency ---------------
@@ -93,7 +101,7 @@ int main() {
         cache.put(10, 1001);
 
         int out{};
-        (void)cache.get(10, out); // ensure it’s present
+        (void) cache.get(10, out); // ensure it’s present
         check_eq("updated value for key 10", out, 1001);
 
         // Now insert 12 -> if updates count as access, 10 has higher freq than 11,

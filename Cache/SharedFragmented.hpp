@@ -1,76 +1,62 @@
 #pragma once
 
-#include <memory>
-#include <type_traits>
-#include <shared_mutex>
+#include <Cache/Concepts/CacheConcepts.hpp>
 #include <Cache/Fragmented.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
+#include <Cache/Interfaces/IStrategyCache.hpp>
 #include <Cache/Strategy/LRU.hpp>
 #include <Cache/Utils/Singleton.hpp>
-#include <Cache/Helpers/MutexLocks.hpp>
-#include <Cache/Concepts/CacheConcepts.hpp>
-#include <Cache/Interfaces/IStrategyCache.hpp>
+#include <memory>
+#include <shared_mutex>
+#include <type_traits>
 
-namespace cache {
+namespace cache
+{
 
-    template<
-                typename K, typename V,
-                typename Strategy = strategy::LRU<K, V>,
-                typename Hash = std::hash<K>,
-                typename Eq = std::equal_to<K>,
-                typename WrapperMutex = std::shared_mutex,
-                typename FragMutex = std::shared_mutex,
-                typename FragmentMutex = std::mutex
-    >
+    template <typename K, typename V, typename Strategy = strategy::LRU<K, V>, typename Hash = std::hash<K>, typename Eq = std::equal_to<K>,
+              typename WrapperMutex = std::shared_mutex, typename FragMutex = std::shared_mutex, typename FragmentMutex = std::mutex>
 
-    requires    concepts::StrategyLike<Strategy, K, V> &&
-                concepts::MutexLike<WrapperMutex> &&
-                concepts::MutexLike<FragMutex> &&
-                concepts::MutexLike<FragmentMutex>
+        requires concepts::StrategyLike<Strategy, K, V> && concepts::MutexLike<WrapperMutex> && concepts::MutexLike<FragMutex> && concepts::MutexLike<FragmentMutex>
 
-    class SharedFragmented final:
-                public IStrategyCache<K, V>,
-                public utils::Singleton<
-                    SharedFragmented<
-                        K, V,
-                        Strategy,
-                        Hash,
-                        Eq,
-                        WrapperMutex,
-                        FragMutex,
-                        FragmentMutex
-                    >
-                >
+    class SharedFragmented final : public IStrategyCache<K, V>, public utils::Singleton<SharedFragmented<K, V, Strategy, Hash, Eq, WrapperMutex, FragMutex, FragmentMutex>>
     {
 
         using FragmentedType = Fragmented<K, V, Strategy, Hash, Eq, FragMutex, FragmentMutex>;
 
-        friend class utils::Singleton<SharedFragmented<
-            K, V, Strategy, Hash, Eq, WrapperMutex, FragMutex, FragmentMutex>
-        >;
+        friend class utils::Singleton<SharedFragmented<K, V, Strategy, Hash, Eq, WrapperMutex, FragMutex, FragmentMutex>>;
 
-    public:
-        using IsSharedCache = void;
+      public:
+        using IsSharedCache     = void;
         using IsFragmentedCache = void;
 
         ~SharedFragmented() noexcept override = default;
 
-        void initialize(std::size_t fragments = 4, std::size_t cap = 128) {
+        void initialize(std::size_t fragments = 4, std::size_t cap = 128)
+        {
             mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
-            if (!_cache) {
+            if (!_cache)
+            {
                 _cache = std::make_unique<FragmentedType>(fragments, cap);
+                if (_invalidateCallback)
+                {
+                    _cache->invalidateIf(std::move(_invalidateCallback));
+                }
             }
         }
 
-        [[nodiscard]] bool isCacheInitialized() const noexcept {
+        [[nodiscard]] bool isCacheInitialized() const noexcept
+        {
             mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
             return static_cast<bool>(_cache);
         }
 
-        [[nodiscard]] bool get(const K& key, V& out) override {
-            FragmentedType *f = nullptr;
+        [[nodiscard]] bool get(const K& key, V& out) override
+        {
+            FragmentedType* f = nullptr;
             {
                 mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
-                if (!_cache) {
+                if (!_cache)
+                {
                     return false;
                 }
                 f = _cache.get();
@@ -78,11 +64,13 @@ namespace cache {
             return f->get(key, out);
         }
 
-        void put(const K& key, const V& val) override {
-            FragmentedType *f = nullptr;
+        void put(const K& key, const V& val) override
+        {
+            FragmentedType* f = nullptr;
             {
                 mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
-                if (!_cache) {
+                if (!_cache)
+                {
                     return;
                 }
                 f = _cache.get();
@@ -90,26 +78,54 @@ namespace cache {
             f->put(key, val);
         }
 
-        void remove(const K& key) override {
-            FragmentedType *f = nullptr;
+        void remove(const K& key) override
+        {
+            FragmentedType* f = nullptr;
             {
                 mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
-            if (f) f->remove(key);
+            if (f)
+                f->remove(key);
         }
 
-        void clear() noexcept override {
-            FragmentedType *f = nullptr;
+        void invalidateIf(std::function<bool(const K&, const V&)> predicate) override
+        {
+            mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
+            if (_cache)
+            {
+                _cache->invalidateIf(std::move(predicate));
+            }
+            else
+            {
+                _invalidateCallback = std::move(predicate);
+            }
+        }
+
+        void clearInvalidationPredicate() override
+        {
+            mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
+            if (_cache)
+            {
+                _cache->clearInvalidationPredicate();
+            }
+            _invalidateCallback = nullptr;
+        }
+
+        void clear() noexcept override
+        {
+            FragmentedType* f = nullptr;
             {
                 mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
             }
-            if (f) f->clear();
+            if (f)
+                f->clear();
         }
 
-        [[nodiscard]] std::size_t size() const noexcept override {
-            FragmentedType *f = nullptr;
+        [[nodiscard]] std::size_t size() const noexcept override
+        {
+            FragmentedType* f = nullptr;
             {
                 mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
@@ -117,8 +133,9 @@ namespace cache {
             return f ? f->size() : 0;
         }
 
-        [[nodiscard]] std::size_t capacity() const noexcept override {
-            FragmentedType *f = nullptr;
+        [[nodiscard]] std::size_t capacity() const noexcept override
+        {
+            FragmentedType* f = nullptr;
             {
                 mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
                 f = _cache.get();
@@ -126,18 +143,21 @@ namespace cache {
             return f ? f->capacity() : 0;
         }
 
-        [[nodiscard]] bool isMtSafe() const noexcept override {
-            if constexpr (std::is_same_v<WrapperMutex, mutex_locks::NoLock>) {
+        [[nodiscard]] bool isMtSafe() const noexcept override
+        {
+            if constexpr (std::is_same_v<WrapperMutex, mutex_locks::NoLock>)
+            {
                 return false;
             }
             return true;
         }
 
-    private:
+      private:
         explicit SharedFragmented() = default;
 
-        mutable WrapperMutex _mtx;
-        std::unique_ptr<FragmentedType> _cache;
+        mutable WrapperMutex                    _mtx;
+        std::unique_ptr<FragmentedType>         _cache;
+        std::function<bool(const K&, const V&)> _invalidateCallback;
     };
 
-}
+} // namespace cache

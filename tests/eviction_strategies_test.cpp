@@ -1,36 +1,45 @@
-// main.cpp
-#include <string>
-#include <iostream>
-#include <type_traits>
-#include <Cache/Helpers/MutexLocks.hpp>
+// Eviction strategy behavior tests.
 #include <Cache/Base.hpp>
+#include <Cache/Helpers/MutexLocks.hpp>
 #include <Cache/Strategy/2Q.hpp>
+#include <Cache/Strategy/FIFO.hpp>
 #include <Cache/Strategy/LRU.hpp>
 #include <Cache/Strategy/MRU.hpp>
 #include <Cache/Strategy/SLRU.hpp>
-#include <Cache/Strategy/FIFO.hpp>
+#include <iostream>
+#include <string>
+#include <type_traits>
 
 template <typename T>
-static void check_eq(const char* name, const T& got, const T& expected) {
-    if (got == expected) {
+static void check_eq(const char* name, const T& got, const T& expected)
+{
+    if (got == expected)
+    {
         std::cout << "[OK]   " << name << " | got=" << got << " expected=" << expected << "\n";
-    } else {
+    }
+    else
+    {
         std::cout << "[FAIL] " << name << " | got=" << got << " expected=" << expected << "\n";
     }
 }
-static void check_true(const char* name, bool cond) {
+
+static void check_true(const char* name, bool cond)
+{
     std::cout << (cond ? "[OK]   " : "[FAIL] ") << name << " | expected true\n";
 }
-static void check_false(const char* name, bool cond) {
+
+static void check_false(const char* name, bool cond)
+{
     std::cout << (!cond ? "[OK]   " : "[FAIL] ") << name << " | expected false\n";
 }
 
-template<class Strategy>
-static void test_policy(const std::string& label) {
+template <class Strategy>
+static void test_policy(const std::string& label)
+{
     using K = int;
     using V = int;
     // Single-thread test: disable internal locking to keep things simple/fast
-    cache::Base<K, V, Strategy, std::hash<K>, std::equal_to<K>, cache::mutex_locks::NoLock> cache(/*capacity*/3);
+    cache::Base<K, V, Strategy, std::hash<K>, std::equal_to<K>, cache::mutex_locks::NoLock> cache(/*capacity*/ 3);
 
     std::cout << "\n=== " << label << " ===\n";
     check_eq("capacity()", cache.capacity(), std::size_t(3));
@@ -58,10 +67,11 @@ static void test_policy(const std::string& label) {
     }
 
     // Make one access pattern before inserting the 4th key to trigger an eviction.
-    if constexpr (std::is_same_v<Strategy, cache::strategy::MRU<K,V>>) {
+    if constexpr (std::is_same_v<Strategy, cache::strategy::MRU<K, V>>)
+    {
         // MRU evicts the **most-recently used**: make 2 the MRU
         V out{};
-        (void)cache.get(2, out);
+        (void) cache.get(2, out);
         // Insert 4 -> expect 2 evicted
         cache.put(4, 400);
         {
@@ -71,11 +81,13 @@ static void test_policy(const std::string& label) {
             check_true("MRU: key 3 should remain", cache.get(3, v));
             check_true("MRU: key 4 present", cache.get(4, v));
         }
-    } else if constexpr (std::is_same_v<Strategy, cache::strategy::LRU<K,V>>) {
+    }
+    else if constexpr (std::is_same_v<Strategy, cache::strategy::LRU<K, V>>)
+    {
         // LRU evicts **least-recently used**:
         // After puts (and get checks above), touch 2 to make it recent; 1 remains LRU.
         V out{};
-        (void)cache.get(2, out);  // 1 is LRU now
+        (void) cache.get(2, out); // 1 is LRU now
         cache.put(4, 400);        // expect 1 evicted
         {
             V v{};
@@ -84,9 +96,11 @@ static void test_policy(const std::string& label) {
             check_true("LRU: key 3 should remain", cache.get(3, v));
             check_true("LRU: key 4 present", cache.get(4, v));
         }
-    } else if constexpr (std::is_same_v<Strategy, cache::strategy::FIFO<K,V>>) {
+    }
+    else if constexpr (std::is_same_v<Strategy, cache::strategy::FIFO<K, V>>)
+    {
         // FIFO evicts the **earliest inserted**; we don't do any access reordering.
-        cache.put(4, 400);        // expect 1 evicted
+        cache.put(4, 400); // expect 1 evicted
         {
             V v{};
             check_false("FIFO: key 1 should be evicted", cache.get(1, v));
@@ -94,10 +108,12 @@ static void test_policy(const std::string& label) {
             check_true("FIFO: key 3 should remain", cache.get(3, v));
             check_true("FIFO: key 4 present", cache.get(4, v));
         }
-    } else if constexpr (std::is_same_v<Strategy, cache::strategy::TwoQueues<K,V>>) {
+    }
+    else if constexpr (std::is_same_v<Strategy, cache::strategy::TwoQueues<K, V>>)
+    {
         // 2Q: new items start in A1; we promote 2 into Am with a hit; eviction prefers A1.
         V out{};
-        (void)cache.get(2, out);  // promote 2 to Am in your TwoQ impl
+        (void) cache.get(2, out); // promote 2 to Am in your TwoQ impl
         cache.put(4, 400);        // expect 1 evicted from A1
         {
             V v{};
@@ -106,8 +122,10 @@ static void test_policy(const std::string& label) {
             check_true("2Q: key 3 should remain (A1)", cache.get(3, v));
             check_true("2Q: key 4 present (A1)", cache.get(4, v));
         }
-    } else if constexpr (std::is_same_v<Strategy, cache::strategy::SLRU<K,V>>) {
-    // Use a fresh cache for a deterministic sequence
+    }
+    else if constexpr (std::is_same_v<Strategy, cache::strategy::SLRU<K, V>>)
+    {
+        // Use a fresh cache for a deterministic sequence
         cache::Base<K, V, Strategy, std::hash<K>, std::equal_to<K>, cache::mutex_locks::NoLock> c(3);
 
         c.put(1, 100);
@@ -115,27 +133,30 @@ static void test_policy(const std::string& label) {
         c.put(3, 300);
 
         int out{};
-        (void)c.get(2, out);  // promote 2
-        (void)c.get(3, out);  // promote 3
+        (void) c.get(2, out); // promote 2
+        (void) c.get(3, out); // promote 3
         c.put(4, 400);        // should evict 1 (probation LRU)
 
         check_false("SLRU: key 1 should be evicted", c.get(1, out));
-        check_true ("SLRU: key 2 should remain (protected)", c.get(2, out));
-        check_true ("SLRU: key 3 should remain (protected)", c.get(3, out));
-        check_true ("SLRU: key 4 present (probation)", c.get(4, out));
-    } else {
+        check_true("SLRU: key 2 should remain (protected)", c.get(2, out));
+        check_true("SLRU: key 3 should remain (protected)", c.get(3, out));
+        check_true("SLRU: key 4 present (probation)", c.get(4, out));
+    }
+    else
+    {
         // Fallback: just trigger an eviction and report size
         cache.put(4, 400);
         check_eq("size() post-eviction", cache.size(), std::size_t(3));
     }
 }
 
-int main() {
-    test_policy<cache::strategy::LRU<int,int>>("LRU");
-    test_policy<cache::strategy::MRU<int,int>>("MRU");
-    test_policy<cache::strategy::FIFO<int,int>>("FIFO");
-    test_policy<cache::strategy::TwoQueues<int,int>>("2Q");
-    test_policy<cache::strategy::SLRU<int,int>>("SLRU");
+int main()
+{
+    test_policy<cache::strategy::LRU<int, int>>("LRU");
+    test_policy<cache::strategy::MRU<int, int>>("MRU");
+    test_policy<cache::strategy::FIFO<int, int>>("FIFO");
+    test_policy<cache::strategy::TwoQueues<int, int>>("2Q");
+    test_policy<cache::strategy::SLRU<int, int>>("SLRU");
     std::cout << "\nAll tests done.\n";
     return 0;
 }

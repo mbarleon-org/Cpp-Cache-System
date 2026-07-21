@@ -1,25 +1,27 @@
 #pragma once
 
-#include <optional>
 #include <Cache/Utils/NonCopyable.hpp>
+#include <optional>
 
-namespace cache::strategy {
-    template<typename K, typename V>
-    class ICacheStrategy: public utils::NonCopyable {
-        public:
-            using KeyType = K;
-            using ValType = V;
+namespace cache::strategy
+{
+    template <typename K, typename V>
+    class ICacheStrategy : public utils::NonCopyable
+    {
+      public:
+        using KeyType = K;
+        using ValType = V;
 
-            virtual ~ICacheStrategy() noexcept = default;
+        virtual ~ICacheStrategy() noexcept = default;
 
-            virtual void onClear() noexcept = 0;
-            [[nodiscard]] virtual bool onAccess(const K& key) = 0;
-            [[nodiscard]] virtual bool onInsert(const K& key) = 0;
-            [[nodiscard]] virtual bool onRemove(const K& key) = 0;
-            virtual void reserve(std::size_t cap) = 0;
-            [[nodiscard]] virtual std::optional<K> selectForEviction() = 0;
+        virtual void                           onClear() noexcept       = 0;
+        [[nodiscard]] virtual bool             onAccess(const K& key)   = 0;
+        [[nodiscard]] virtual bool             onInsert(const K& key)   = 0;
+        [[nodiscard]] virtual bool             onRemove(const K& key)   = 0;
+        virtual void                           reserve(std::size_t cap) = 0;
+        [[nodiscard]] virtual std::optional<K> selectForEviction()      = 0;
 
-        protected:
-            constexpr explicit ICacheStrategy() = default;
+      protected:
+        constexpr explicit ICacheStrategy() = default;
     };
-}
+} // namespace cache::strategy

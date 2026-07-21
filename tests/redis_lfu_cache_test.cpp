@@ -1,44 +1,51 @@
-// main.cpp
+// Redis-style LFU cache behavior tests.
+#include <Cache/Base.hpp>
+#include <Cache/Helpers/MutexLocks.hpp> // adjust path if needed
+#include <Cache/Strategy/RedisLFU.hpp>  // the strategy provided earlier
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <thread>
-#include <chrono>
-#include <Cache/Base.hpp>
-#include <Cache/Helpers/MutexLocks.hpp>        // adjust path if needed
-#include <Cache/Strategy/RedisLFU.hpp>  // the strategy provided earlier
 
 template <typename T>
-static void check_eq(const char* name, const T& got, const T& expected) {
-    if (got == expected) {
+static void check_eq(const char* name, const T& got, const T& expected)
+{
+    if (got == expected)
+    {
         std::cout << "[OK]   " << name << " | got=" << got << " expected=" << expected << "\n";
-    } else {
+    }
+    else
+    {
         std::cout << "[FAIL] " << name << " | got=" << got << " expected=" << expected << "\n";
     }
 }
-static void check_true(const char* name, bool cond) {
+
+static void check_true(const char* name, bool cond)
+{
     std::cout << (cond ? "[OK]   " : "[FAIL] ") << name << " | expected true\n";
 }
-static void check_false(const char* name, bool cond) {
+
+static void check_false(const char* name, bool cond)
+{
     std::cout << (!cond ? "[OK]   " : "[FAIL] ") << name << " | expected false\n";
 }
 
-int main() {
+int main()
+{
     using K = int;
     using V = int;
 
     // Cache alias: StrategyCache with RedisLFU + data:: (single-threaded test)
     using Cache = cache::Base<
         K, V,
-        cache::strategy::RedisLFU<K,V>,
+        cache::strategy::RedisLFU<K, V>,
         std::hash<K>, std::equal_to<K>,
-        cache::mutex_locks::NoLock
-    >;
+        cache::mutex_locks::NoLock>;
 
     std::cout << "\n=== RedisLFU: basic insert/get ===\n";
     {
         Cache cache(3);
         check_eq("capacity()", cache.capacity(), std::size_t(3));
-
 
         // Miss on empty
         int out{};
@@ -51,11 +58,11 @@ int main() {
 
         // Basic hits
         check_true("get(1)", cache.get(1, out));
-        check_eq  ("value(1)", out, 100);
+        check_eq("value(1)", out, 100);
         check_true("get(2)", cache.get(2, out));
-        check_eq  ("value(2)", out, 200);
+        check_eq("value(2)", out, 200);
         check_true("get(3)", cache.get(3, out));
-        check_eq  ("value(3)", out, 300);
+        check_eq("value(3)", out, 300);
     }
 
     std::cout << "\n=== RedisLFU: time decay demonstration (optional) ===\n";
@@ -67,7 +74,8 @@ int main() {
         cache.put(11, 1100);
 
         int out{};
-        for (int i = 0; i < 1000; ++i) (void)cache.get(10, out); // heat key 10
+        for (int i = 0; i < 1000; ++i)
+            (void) cache.get(10, out); // heat key 10
 
         std::cout << "[INFO] Sleeping ~65s to allow 1 minute decay step (Ctrl+C to skip)…\n";
         // If you don't want to sleep in your test, comment the next two lines.
