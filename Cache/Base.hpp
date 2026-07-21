@@ -80,6 +80,12 @@ namespace cache
             _invalidateCallback = std::move(predicate);
         }
 
+        [[nodiscard]] virtual bool hasInvalidationPredicate() const noexcept override
+        {
+            mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
+            return static_cast<bool>(_invalidateCallback);
+        }
+
         virtual void clearInvalidationPredicate() override
         {
             mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);

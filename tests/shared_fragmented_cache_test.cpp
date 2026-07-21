@@ -57,16 +57,19 @@ int main()
 
     // --------- basic single-thread checks ----------
     check_false("isCacheInitialized()", cache.isCacheInitialized());
+    check_false("shared-fragmented cache initially has no invalidation predicate", cache.hasInvalidationPredicate());
     int invalidate_callback_calls = 0;
     cache.invalidateIf([&invalidate_callback_calls](const K& key, const V& value) {
         ++invalidate_callback_calls;
         return key == 42 && value == -42;
     });
+    check_true("shared-fragmented cache reports a predicate before initialization", cache.hasInvalidationPredicate());
     cache.remove(42);
     check_eq("remove before initialization is a no-op", cache.size(), std::size_t(0));
     check_false("putIfAbsent before initialization is a no-op", cache.putIfAbsent(7, 70));
     check_false("contains before initialization misses", cache.contains(7));
     cache.initialize(/*fragments*/ 4, /*capacity*/ 64); // 16 per fragment
+    check_true("shared-fragmented cache reports the predicate after initialization", cache.hasInvalidationPredicate());
     check_eq("capacity()", cache.capacity(), std::size_t(64));
     check_true("isCacheInitialized()", cache.isCacheInitialized());
 
@@ -79,6 +82,7 @@ int main()
     check_eq("callback receives the matching key/value pair", invalidate_callback_calls, 1);
 
     cache.clearInvalidationPredicate();
+    check_false("shared-fragmented cache reports no predicate after clearing it", cache.hasInvalidationPredicate());
     cache.put(42, -42);
     check_true("entry remains available after clearing the shared-fragmented predicate", cache.get(42, out));
     check_eq("cleared shared-fragmented predicate is not invoked", invalidate_callback_calls, 1);

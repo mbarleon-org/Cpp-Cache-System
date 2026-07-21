@@ -59,6 +59,7 @@ int main()
     }
     cache.remove(42);
     check_eq("remove from an unused shard is a no-op", cache.size(), std::size_t(0));
+    check_false("fragmented cache initially has no invalidation predicate", cache.hasInvalidationPredicate());
 
     check_true("fragmented putIfAbsent inserts into a lazy shard", cache.putIfAbsent(42, 420));
     check_false("fragmented putIfAbsent rejects an existing key", cache.putIfAbsent(42, 421));
@@ -79,6 +80,7 @@ int main()
             ++callback_calls;
             return key == 0 || value < 0;
         });
+        check_true("fragmented cache reports its invalidation predicate", cache.hasInvalidationPredicate());
         cache.put(1, -200); // shard 1 is created after callback registration
         cache.put(4, 140);  // nonmatching entry in the existing shard 0
 
@@ -90,6 +92,7 @@ int main()
         check_eq("callback receives each cached key/value pair read", callback_calls, 3);
 
         cache.clearInvalidationPredicate();
+        check_false("fragmented cache reports no predicate after clearing it", cache.hasInvalidationPredicate());
         cache.put(0, -100); // existing shard
         cache.put(2, -300); // shard created after the predicate was cleared
         check_true("cleared predicate no longer applies to an existing shard", cache.get(0, out));

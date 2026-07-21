@@ -89,6 +89,12 @@ namespace cache
             }
         }
 
+        [[nodiscard]] virtual bool hasInvalidationPredicate() const noexcept override
+        {
+            mutex_locks::ReadLock<decltype(_mtx)> rlock(_mtx);
+            return _cache ? _cache->hasInvalidationPredicate() : static_cast<bool>(_invalidateCallback);
+        }
+
         virtual void clearInvalidationPredicate() override
         {
             mutex_locks::WriteLock<decltype(_mtx)> wlock(_mtx);
@@ -163,6 +169,6 @@ namespace cache
 
         mutable Mutex                                                        _mtx;
         std::unique_ptr<Base<K, V, Strategy, Hash, Eq, mutex_locks::NoLock>> _cache;
-        std::function<bool(const K&, const V&)>                              _invalidateCallback;
+        std::function<bool(const K&, const V&)>                              _invalidateCallback = nullptr;
     };
 } // namespace cache

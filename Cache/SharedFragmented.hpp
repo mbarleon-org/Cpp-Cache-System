@@ -102,6 +102,12 @@ namespace cache
             }
         }
 
+        [[nodiscard]] bool hasInvalidationPredicate() const noexcept override
+        {
+            mutex_locks::ReadLock<decltype(_mtx)> r(_mtx);
+            return _cache ? _cache->hasInvalidationPredicate() : static_cast<bool>(_invalidateCallback);
+        }
+
         void clearInvalidationPredicate() override
         {
             mutex_locks::WriteLock<decltype(_mtx)> w(_mtx);
@@ -192,7 +198,7 @@ namespace cache
 
         mutable WrapperMutex                    _mtx;
         std::unique_ptr<FragmentedType>         _cache;
-        std::function<bool(const K&, const V&)> _invalidateCallback;
+        std::function<bool(const K&, const V&)> _invalidateCallback = nullptr;
     };
 
 } // namespace cache

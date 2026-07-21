@@ -33,17 +33,20 @@ int main()
 
     auto& cache = Cache::getInstance();
 
+    check_false("shared cache initially has no invalidation predicate", cache.hasInvalidationPredicate());
     int invalidate_callback_calls = 0;
     cache.invalidateIf([&invalidate_callback_calls](const int& key, const int& value) {
         ++invalidate_callback_calls;
         return key == 42 && value == -42;
     });
+    check_true("shared cache reports a predicate before initialization", cache.hasInvalidationPredicate());
     cache.remove(42);
     check_eq("remove before initialization is a no-op", cache.size(), std::size_t(0));
     check_false("putIfAbsent before initialization is a no-op", cache.putIfAbsent(7, 70));
     check_false("contains before initialization misses", cache.contains(7));
 
     cache.initialize(3);
+    check_true("shared cache reports the predicate after initialization", cache.hasInvalidationPredicate());
     cache.put(42, -42);
     int out{};
     check_false("pre-initialize invalidateIf callback invalidates a later entry", cache.get(42, out));
@@ -51,6 +54,7 @@ int main()
     check_eq("callback receives the matching key/value pair", invalidate_callback_calls, 1);
 
     cache.clearInvalidationPredicate();
+    check_false("shared cache reports no predicate after clearing it", cache.hasInvalidationPredicate());
     cache.put(42, -42);
     check_true("entry remains available after clearing the shared predicate", cache.get(42, out));
     check_eq("cleared shared predicate is not invoked", invalidate_callback_calls, 1);

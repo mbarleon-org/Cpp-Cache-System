@@ -152,12 +152,14 @@ static void test_invalidate_if()
     IntStringCache cache(3);
     int            callback_calls = 0;
 
+    check_false("cache initially has no invalidation predicate", cache.hasInvalidationPredicate());
     cache.put(1, "stale");
     cache.put(2, "fresh");
     cache.invalidateIf([&callback_calls](const int& key, const std::string& value) {
         ++callback_calls;
         return key == 1 && value == "stale";
     });
+    check_true("invalidateIf registers an invalidation predicate", cache.hasInvalidationPredicate());
 
     std::string value{};
     check_true("nonmatching entry remains available", cache.get(2, value));
@@ -179,7 +181,9 @@ static void test_clear_invalidation_predicate()
         ++callback_calls;
         return true;
     });
+    check_true("cache reports the predicate before it is cleared", cache.hasInvalidationPredicate());
     cache.clearInvalidationPredicate();
+    check_false("cache reports no predicate after it is cleared", cache.hasInvalidationPredicate());
 
     std::string value{};
     check_true("entry remains available after clearing the predicate", cache.get(1, value));

@@ -17,6 +17,7 @@ namespace cache
         virtual void                      put(const K& key, const V& value)                               = 0;
         virtual void                      remove(const K& key)                                            = 0;
         virtual void                      invalidateIf(std::function<bool(const K&, const V&)> predicate) = 0;
+        [[nodiscard]] virtual bool        hasInvalidationPredicate() const noexcept                       = 0;
         virtual void                      clearInvalidationPredicate()                                    = 0;
         virtual void                      clear() noexcept                                                = 0;
         [[nodiscard]] virtual std::size_t size() const noexcept                                           = 0;
