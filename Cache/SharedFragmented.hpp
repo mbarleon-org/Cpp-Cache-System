@@ -194,7 +194,7 @@ namespace cache
         }
 
       private:
-        explicit SharedFragmented() = default;
+        constexpr explicit SharedFragmented() = default;
 
         mutable WrapperMutex                    _mtx;
         std::unique_ptr<FragmentedType>         _cache;

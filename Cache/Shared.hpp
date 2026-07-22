@@ -165,7 +165,7 @@ namespace cache
         }
 
       private:
-        explicit Shared() = default;
+        constexpr explicit Shared() = default;
 
         mutable Mutex                                                        _mtx;
         std::unique_ptr<Base<K, V, Strategy, Hash, Eq, mutex_locks::NoLock>> _cache;
